@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import Device from "../models/Device.js";
+import crypto from "crypto";
 import asyncHandler from "../utils/asyncHandler.js";
-import { hashPassword, comparePassword, hashToken } from "../utils/crypto.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens.js";
 import { refreshTokenCookieOptions } from "../utils/cookieOptions.js";
 
@@ -10,8 +10,11 @@ import { refreshTokenCookieOptions } from "../utils/cookieOptions.js";
 export const adminLogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
+  console.log("REQ BODY:", req.body);
+
   const user = await User.findOne({ email });
-  if (!user || !(await comparePassword(password, user.password))) {
+  const  hashedpassword = crypto.createHash("sha256").update(password).digest("hex");
+  if (!user ||  hashedpassword !== user.password) {
     res.status(401);
     throw new Error("Invalid email or password");
   }
@@ -37,7 +40,7 @@ export const employeeRegister = asyncHandler(async (req, res) => {
     throw new Error("An account with this email or device ID already exists");
   }
 
-  const hashedPassword = await hashPassword(password);
+  const hashedPassword = crypto.createHash("sha256").update(password).digest("hex");
 
   const device = await Device.create({
     employeeName,
@@ -58,7 +61,8 @@ export const employeeLogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const device = await Device.findOne({ email });
-  if (!device || !(await comparePassword(password, device.password))) {
+   const  hashedpassword = crypto.createHash("sha256").update(password).digest("hex");
+  if (!device ||  hashedpassword !== device.password) {
     res.status(401);
     throw new Error("Invalid email or password");
   }
@@ -103,15 +107,11 @@ export const refreshToken = asyncHandler(async (req, res) => {
   const Model = decoded.role === "admin" ? User : Device;
   const account = await Model.findById(decoded.id);
 
-  if (!account || !account.refreshTokenHash) {
+  if (!account) {
     res.status(401);
     throw new Error("Refresh token invalid - please log in again");
   }
-
-  if (hashToken(incomingToken) !== account.refreshTokenHash) {
-    res.status(401);
-    throw new Error("Refresh token invalid - please log in again");
-  }
+ 
 
   const newAccessToken = generateAccessToken(account._id, decoded.role);
   const newRefreshToken = generateRefreshToken(account._id, decoded.role);

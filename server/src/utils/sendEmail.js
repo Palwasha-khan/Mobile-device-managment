@@ -1,17 +1,26 @@
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false, // true only if using port 465
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: parseInt(process.env.EMAIL_PORT || '587'),
+    secure: process.env.EMAIL_PORT === '465', 
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    connectionTimeout: 10000,
+  });
+};
 
 export const sendEmail = async ({ to, subject, html }) => {
   try {
+
+    const transporter = createTransporter();
+    console.log("host:", process.env.EMAIL_HOST,)
+    console.log("to",to)
+    console.log("subject",subject)
+    console.log("html",html)
     await transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to,
