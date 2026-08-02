@@ -30,6 +30,46 @@ export const adminLogin = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Create a new admin user directly
+// @route   POST /api/admin/create-admin
+// @access  Private (Admin only)
+export const createNewAdmin = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    res.status(400);
+    throw new Error('Please provide name, email, and password');
+  }
+
+  // Check if user already exists
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    res.status(400);
+    throw new Error('User with this email already exists');
+  }
+
+  // Hash password
+  const hashedPassword = crypto.createHash("sha256").update(password).digest("hex");
+
+  // Create new user explicitly set to 'admin' role
+  const adminUser = await User.create({
+    name,
+    email,
+    password: hashedPassword,
+    role: 'admin',
+  });
+
+  res.status(201).json({
+    message: 'New admin successfully created',
+    admin: {
+      id: adminUser._id,
+      name: adminUser.name,
+      email: adminUser.email,
+      role: adminUser.role,
+    },
+  });
+});
+
 // @route   POST /api/auth/employee-register
 export const employeeRegister = asyncHandler(async (req, res) => {
   const { employeeName, email, password, deviceId } = req.body;
