@@ -175,13 +175,13 @@ admin-web/
 
 
         1
-Phase 1: Project setup + the axios refresh interceptor
+Phase 1:✅ Project setup + the axios refresh interceptor
 Scaffold with Vite, install core dependencies (react-router-dom, axios, @tanstack/react-query, socket.io-client), set up the folder structure, and build the axios instance with an interceptor that automatically refreshes the access token on a 401 and retries the failed request once. This is the piece that makes the whole access+refresh token system actually work seamlessly in the UI.
 2
-Phase 2: Auth - login, context, protected routes
+Phase 2:✅ Auth - login, context, protected routes
 Build AuthContext (login, logout, current admin state), the Login page, and ProtectedRoute. Test that login works, the access token attaches to requests, and refresh-on-expiry actually happens (you can fake this by temporarily setting ACCESS_TOKEN_EXPIRES_IN to something very short like 30s on the backend to watch it refresh live).
 3
-Phase 3: Dashboard layout shell (sidebar + topbar)
+Phase 3:✅ Dashboard layout shell (sidebar + topbar)
 Build the persistent shell every authenticated page lives inside: Sidebar (nav links), Topbar (admin name, logout), and DashboardLayout wrapping them. Get routing fully wired so navigating between pages doesn't lose the sidebar/topbar.
 4
 Phase 4: Dashboard home page (summary cards + chart)

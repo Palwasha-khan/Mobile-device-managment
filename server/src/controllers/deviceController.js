@@ -89,21 +89,24 @@ export const sendPing = asyncHandler(async (req, res) => {
   const device = await Device.findByIdAndUpdate(
     req.auth.id,
     {
-      lastKnownLocation: { lat, lng },
-      lastPingAt: now,
-      permissions: {
-        camera: newCamera,
-        microphone: newMicrophone,
-        locationServiceActive,
-      },
-      isCompliant,
+      $set: {
+        lastKnownLocation: { lat, lng },
+        lastPingAt: now,
+        permissions: {
+          camera: newCamera,
+          microphone: newMicrophone,
+          locationServiceActive,
+        },
+        isCompliant,
+      }
     },
-    { returnDocument: "after" }
+    { new: true, runValidators: true }
   );
- 
+  console.log("before",device.permissions)
   const changes = [];
   const oldCamera = existingDevice?.permissions?.camera || "denied";
 const oldMicrophone = existingDevice?.permissions?.microphone || "denied";
+console.log(device.permissions)
 
 if (oldCamera !== newCamera) {
   changes.push({
@@ -145,6 +148,7 @@ if (oldMicrophone !== newMicrophone) {
       permissions: device.permissions,
     });
   }
+  console.log("after",device.permissions)
 
   res.status(200).json({
     message: "Ping received",
@@ -212,6 +216,26 @@ export const getDeviceHistory = asyncHandler(async (req, res) => {
     .lean();
 
   res.status(200).json({ device, locationHistory, permissionHistory });
+});
+
+export const getDeviceStats = asyncHandler(async (req, res) => {
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+  const [totalDevices, activeDevices, compliantDevices, pendingDevices] =
+    await Promise.all([
+      Device.countDocuments(),
+      Device.countDocuments({ lastPingAt: { $gte: fifteenMinutesAgo } }),
+      Device.countDocuments({ isCompliant: true }),
+      Device.countDocuments({ status: "pending" }),
+    ]);
+
+  res.status(200).json({
+    totalDevices,
+    activeDevices,
+    compliantDevices,
+    nonCompliantDevices: totalDevices - compliantDevices,
+    pendingDevices,
+  });
 });
 
 // ---------- Remote commands ----------

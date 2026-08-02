@@ -13,5 +13,7 @@ export const rejectDevice = (id) => axiosClient.patch(`/device/${id}/reject`);
 
 export const updateDevice = (id, updates) => axiosClient.put(`/device/${id}`, updates);
 
+export const getDeviceStats = () => axiosClient.get("/device/stats");
+
 export const sendCommand = (id, commandType) =>
   axiosClient.post(`/device/${id}/command`, { commandType });

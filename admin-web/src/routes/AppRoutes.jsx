@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "../features/auth/LoginPage";
 import ProtectedRoute from "./ProtectedRoute";
+import DashboardLayout from "../layouts/DashboardLayout";
+import DashboardPage from "../features/dashboard/DashboardPage";
 
 export default function AppRoutes() {
   return (
@@ -11,7 +13,9 @@ export default function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <div>Dashboard placeholder - built in Phase 4</div>
+            <DashboardLayout>
+               <DashboardPage />
+            </DashboardLayout>
           </ProtectedRoute>
         }
       />

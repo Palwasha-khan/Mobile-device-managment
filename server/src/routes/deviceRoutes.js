@@ -8,6 +8,7 @@ import {
   getDeviceHistory,
   sendCommand,
   updateDevice,
+  getDeviceStats,
 } from "../controllers/deviceController.js";
 import { protect, requireRole } from "../middleware/authMiddleware.js";
 import {
@@ -29,6 +30,7 @@ router.post("/ping", protect, requireRole("employee"), pingRules, sendPing);
 // Admin device management
 router.get("/devices", protect, requireRole("admin"), getAllDevices);
 router.get("/:id/history", protect, requireRole("admin"), getDeviceHistory);
+router.get("/stats", protect, requireRole("admin"), getDeviceStats);
 router.post(
   "/:id/command",
   protect,
