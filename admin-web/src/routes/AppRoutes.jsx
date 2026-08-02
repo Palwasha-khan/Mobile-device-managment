@@ -3,6 +3,8 @@ import LoginPage from "../features/auth/LoginPage";
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../layouts/DashboardLayout";
 import DashboardPage from "../features/dashboard/DashboardPage";
+import DevicesListPage from "../features/devices/DevicesListPage";
+import DeviceDetailPage from "../features/devices/DeviceDetailPage";
 
 export default function AppRoutes() {
   return (
@@ -19,6 +21,26 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+            path="/devices"
+            element={
+                <ProtectedRoute>
+                <DashboardLayout>
+                    <DevicesListPage />
+                </DashboardLayout>
+                </ProtectedRoute>
+            }
+            />
+            <Route
+            path="/devices/:id"
+            element={
+                <ProtectedRoute>
+                <DashboardLayout>
+                    <DeviceDetailPage />
+                </DashboardLayout>
+                </ProtectedRoute>
+            }
+            />
     </Routes>
   );
 }

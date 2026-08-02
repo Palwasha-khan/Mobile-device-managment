@@ -173,6 +173,19 @@ export const getAllDevices = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
 
+  const filter = {};
+
+  if (req.query.search) {
+    const searchRegex = new RegExp(req.query.search, "i");
+    filter.$or = [{ employeeName: searchRegex }, { email: searchRegex }];
+  }
+
+  if (req.query.compliance === "compliant") {
+    filter.isCompliant = true;
+  } else if (req.query.compliance === "non-compliant") {
+    filter.isCompliant = false;
+  }
+
   const [devices, totalCount] = await Promise.all([
     Device.find()
       .select("-password")
@@ -180,7 +193,7 @@ export const getAllDevices = asyncHandler(async (req, res) => {
       .skip(skip)
       .limit(limit)
       .lean(),  
-    Device.countDocuments(),
+    Device.countDocuments(filter),
   ]);
 
   res.status(200).json({

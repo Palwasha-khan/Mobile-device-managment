@@ -28,7 +28,7 @@ router.patch("/:id/reject", protect, requireRole("admin"), rejectDevice);
 router.post("/ping", protect, requireRole("employee"), pingRules, sendPing);
 
 // Admin device management
-router.get("/devices", protect, requireRole("admin"), getAllDevices);
+router.get("/", protect, requireRole("admin"), getAllDevices);
 router.get("/:id/history", protect, requireRole("admin"), getDeviceHistory);
 router.get("/stats", protect, requireRole("admin"), getDeviceStats);
 router.post(

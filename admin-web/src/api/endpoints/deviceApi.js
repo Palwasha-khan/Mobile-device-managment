@@ -1,7 +1,9 @@
 import axiosClient from "../axiosClient";
 
-export const getDevices = (page = 1, limit = 20) =>
-  axiosClient.get(`/device?page=${page}&limit=${limit}`);
+export const getDevices = (page = 1, limit = 20, search = "", compliance = "") =>
+  axiosClient.get(
+    `/device?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&compliance=${compliance}`
+  );
 
 export const getDeviceHistory = (id) => axiosClient.get(`/device/${id}/history`);
 

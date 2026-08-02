@@ -3,13 +3,13 @@ import Topbar from "../components/layout/Topbar";
 
 export default function DashboardLayout({ children }) {
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <div style={{ width: "220px", borderRight: "1px solid #e0e0e0" }}>
+    <div className="flex min-h-screen bg-slate-50">
+      <div className="w-56 shrink-0">
         <Sidebar />
       </div>
-      <div style={{ flex: 1 }}>
+      <div className="flex-1 flex flex-col">
         <Topbar />
-        <main style={{ padding: "24px" }}>{children}</main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );

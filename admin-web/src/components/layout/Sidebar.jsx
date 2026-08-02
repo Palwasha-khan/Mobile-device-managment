@@ -10,16 +10,20 @@ const navItems = [
 
 export default function Sidebar() {
   return (
-    <nav>
-      <h2>MDM Admin</h2>
-      <ul>
+    <nav className="h-full flex flex-col bg-white border-r border-slate-200 px-4 py-6">
+      <h2 className="text-lg font-bold text-slate-900 mb-8 px-2">MDM Admin</h2>
+      <ul className="space-y-1">
         {navItems.map((item) => (
           <li key={item.to}>
             <NavLink
               to={item.to}
-              style={({ isActive }) => ({
-                fontWeight: isActive ? "bold" : "normal",
-              })}
+              className={({ isActive }) =>
+                `block px-3 py-2 rounded-md text-sm font-medium transition ${
+                  isActive
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`
+              }
             >
               {item.label}
             </NavLink>
