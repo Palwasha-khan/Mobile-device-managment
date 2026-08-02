@@ -13,7 +13,9 @@ import { approvalEmailTemplate, rejectionEmailTemplate } from "../utils/emailTem
 // @route   GET /api/device/pending
 // @access  Private (admin)
 export const getPendingDevices = asyncHandler(async (req, res) => {
-  const pending = await Device.find({ status: "pending" }).select("-password");
+  const pending = await Device.find({ status: "pending" })
+  .select("-password")
+  .lean();
   res.status(200).json({ devices: pending });
 });
 
@@ -162,10 +164,30 @@ if (oldMicrophone !== newMicrophone) {
 // @route   GET /api/device
 // @access  Private (admin)
 export const getAllDevices = asyncHandler(async (req, res) => {
-  const devices = await Device.find()
-    .select("-password")
-    .sort({ employeeName: 1 });
-  res.status(200).json({ devices });
+  
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  const [devices, totalCount] = await Promise.all([
+    Device.find()
+      .select("-password")
+      .sort({ employeeName: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),  
+    Device.countDocuments(),
+  ]);
+
+  res.status(200).json({
+    devices,
+    pagination: {
+      page,
+      limit,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+    },
+  });
 });
 
 // @route   GET /api/device/:id/history
@@ -181,11 +203,13 @@ export const getDeviceHistory = asyncHandler(async (req, res) => {
 
   const locationHistory = await LocationLog.find({ device: id })
     .sort({ timestamp: -1 })
-    .limit(50);
+    .limit(50)
+    .lean();
 
   const permissionHistory = await PermissionLog.find({ device: id })
     .sort({ timestamp: -1 })
-    .limit(50);
+    .limit(50)
+    .lean();
 
   res.status(200).json({ device, locationHistory, permissionHistory });
 });

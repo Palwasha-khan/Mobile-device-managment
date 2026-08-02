@@ -28,6 +28,8 @@ const deviceSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+deviceSchema.index({ isCompliant: 1 });
+deviceSchema.index({ status: 1 });
  
 
 export default mongoose.model("Device", deviceSchema);
