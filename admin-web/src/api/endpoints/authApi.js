@@ -9,3 +9,5 @@ export const refreshRequest = () => axiosClient.post("/auth/refresh-token");
 
 export const createAdmin = (name, email, password) =>
   axiosClient.post("/auth/create-admin", { name, email, password });
+
+export const getMe = () => axiosClient.get("/auth/me");
