@@ -1,6 +1,7 @@
 import app from "./app.js";
 import connectDB from "./config/db.js";
 import dotenv from "dotenv";
+import cors from "cors";
 
 import http from "http";
 import { Server } from "socket.io";
@@ -33,6 +34,6 @@ io.on("connection", (socket) => {
 app.set("io", io);
 
 const PORT = process.env.PORT || 4000;  
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

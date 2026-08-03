@@ -187,7 +187,7 @@ export const getAllDevices = asyncHandler(async (req, res) => {
   }
 
   const [devices, totalCount] = await Promise.all([
-    Device.find()
+    Device.find(filter)
       .select("-password")
       .sort({ employeeName: 1 })
       .skip(skip)

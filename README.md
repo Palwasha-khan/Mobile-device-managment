@@ -184,10 +184,10 @@ Build AuthContext (login, logout, current admin state), the Login page, and Prot
 Phase 3:✅ Dashboard layout shell (sidebar + topbar)
 Build the persistent shell every authenticated page lives inside: Sidebar (nav links), Topbar (admin name, logout), and DashboardLayout wrapping them. Get routing fully wired so navigating between pages doesn't lose the sidebar/topbar.
 4
-Phase 4: Dashboard home page (summary cards + chart)
+Phase 4:✅ Dashboard home page (summary cards + chart)
 Build the actual dashboard home page: summary cards (Total Devices, Active, Compliant, Non-Compliant), and a compliance breakdown chart. This is largely a GET /api/device request summarized client-side, or you can add a small /api/device/stats backend route later if you want the counting done server-side instead.
 5
-Phase 5: Devices list + device detail/edit/commands
+Phase 5:✅ Devices list + device detail/edit/commands
 Build the devices table using the paginated GET /api/device endpoint from Phase 5 of the backend plan - search, sort, pagination controls, compliance badges. Then the device detail page: location history table, permission history table, edit form (PUT /api/device/:id), and the 3 remote command buttons.
 6
 Phase 6: Pending approvals page (new - didn't exist before)

@@ -2,13 +2,28 @@ import { useState } from "react";
 import { useDevices } from "../../hooks/useDevices";
 import DeviceFilters from "./components/DeviceFilters";
 import DeviceTable from "./components/DeviceTable";
+import { useSearchParams } from "react-router-dom";
 
 export default function DevicesListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const search = searchParams.get("search") || "";
   const [compliance, setCompliance] = useState("");
 
   const { data, isLoading, isError } = useDevices({ page, search, compliance });
+
+  const handleSearchSubmit = (searchTerm) => {
+    setSearchParams({ page: "1", search: searchTerm, compliance });
+  };
+
+  const handleComplianceChange = (val) => {
+    setCompliance(val);
+    setPage(1); // Reset to page 1 when filter changes
+  };
+
+  const handleClear = () => {
+  setSearchParams({ page: "1", search: "", compliance: "" });
+};
 
   if (isLoading) return <p className="text-slate-500">Loading devices...</p>;
   if (isError) return <p className="text-red-600">Failed to load devices.</p>;
@@ -20,11 +35,16 @@ export default function DevicesListPage() {
       <h1 className="text-2xl font-bold text-slate-900 mb-4">Devices</h1>
       <DeviceFilters
         search={search}
-        setSearch={(v) => { setSearch(v); setPage(1); }}
+        onSearchSubmit={handleSearchSubmit}
         compliance={compliance}
-        setCompliance={(v) => { setCompliance(v); setPage(1); }}
+        setCompliance={handleComplianceChange}
+        onClear={handleClear}
       />
-      <DeviceTable devices={devices} />
+      {devices.length === 0 ? (
+        <p className="text-slate-500">No devices found.</p>
+      ) : (
+        <>
+          <DeviceTable devices={devices} />
 
       <div className="flex items-center justify-between mt-4 text-sm text-slate-500">
         <span>
@@ -47,6 +67,9 @@ export default function DevicesListPage() {
           </button>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
+     
