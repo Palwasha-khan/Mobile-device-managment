@@ -6,6 +6,7 @@ import DashboardPage from "../features/dashboard/DashboardPage";
 import DevicesListPage from "../features/devices/DevicesListPage";
 import DeviceDetailPage from "../features/devices/DeviceDetailPage";
 import PendingApprovalsPage from "../features/pendingApprovals/PendingApprovalsPage";
+import LiveMapPage from "../features/map/LiveMapPage";
 
 export default function AppRoutes() {
   return (
@@ -48,6 +49,16 @@ export default function AppRoutes() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <PendingApprovalsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/map"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <LiveMapPage />
                 </DashboardLayout>
               </ProtectedRoute>
             }

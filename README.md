@@ -190,10 +190,10 @@ Build the actual dashboard home page: summary cards (Total Devices, Active, Comp
 Phase 5:✅ Devices list + device detail/edit/commands
 Build the devices table using the paginated GET /api/device endpoint from Phase 5 of the backend plan - search, sort, pagination controls, compliance badges. Then the device detail page: location history table, permission history table, edit form (PUT /api/device/:id), and the 3 remote command buttons.
 6
-Phase 6: Pending approvals page (new - didn't exist before)
+Phase 6: ✅Pending approvals page (new - didn't exist before)
 Build the Pending Approvals page - GET /api/device/pending, with Approve/Reject buttons per row. This is a feature your backend already supports but admin-web has never had a UI for yet.
 7
-Phase 7: Live map + persistent Socket.io connection
+Phase 7:✅ Live map + persistent Socket.io connection
 Build the Leaflet map (reusing the DeviceMap logic from before) as its own full page, plus wire up socket.io-client with a SocketContext so the connection persists across navigation instead of disconnecting every time you switch pages (the bug you fixed on mobile applies here too).
 8
 Phase 8: Polish (loading states, empty states, visual design)
