@@ -1,25 +1,24 @@
 import { useState } from "react";
 import { updateDevice } from "../../../api/endpoints/deviceApi";
 import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 export default function EditDeviceForm({ device }) {
   const [employeeName, setEmployeeName] = useState(device.employeeName);
   const [email, setEmail] = useState(device.email);
   const [deviceId, setDeviceId] = useState(device.deviceId);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [saving, setSaving] = useState(false); 
   const queryClient = useQueryClient();
 
   const handleSave = async (e) => {
     e.preventDefault();
-    setSaving(true);
-    setMessage(null);
+    setSaving(true); 
     try {
       await updateDevice(device._id, { employeeName, email, deviceId });
-      setMessage("Saved successfully.");
+      toast.success("Saved successfully.");
       queryClient.invalidateQueries(["deviceHistory", device._id]);
     } catch (err) {
-      setMessage(err.response?.data?.message || "Failed to save.");
+      toast.error(err.response?.data?.message || "Failed to save.");
     } finally {
       setSaving(false);
     }

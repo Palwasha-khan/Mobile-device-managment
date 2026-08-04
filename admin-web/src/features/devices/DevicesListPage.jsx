@@ -3,6 +3,8 @@ import { useDevices } from "../../hooks/useDevices";
 import DeviceFilters from "./components/DeviceFilters";
 import DeviceTable from "./components/DeviceTable";
 import { useSearchParams } from "react-router-dom";
+import { SkeletonTable } from "../../components/ui/Skeleton";
+import EmptyState from "../../components/shared/EmptyState";
 
 export default function DevicesListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -40,9 +42,16 @@ export default function DevicesListPage() {
         setCompliance={handleComplianceChange}
         onClear={handleClear}
       />
-      {devices.length === 0 ? (
-        <p className="text-slate-500">No devices found.</p>
-      ) : (
+
+      {isLoading ? (
+  <SkeletonTable rows={6} cols={4} />
+) : devices.length === 0 ? (
+      <EmptyState
+    title="No devices found"
+    description={search || compliance ? "Try adjusting your filters." : "No approved employees yet."}
+    icon="📱"
+  />
+) : (
         <>
           <DeviceTable devices={devices} />
 

@@ -70,6 +70,32 @@ export const createNewAdmin = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    change admin password
+// @route   POST /api/auth/change-password
+// @access  Private
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.auth.id);
+  if (!user) {
+    res.status(404);
+    throw new Error("Account not found");
+  }
+
+  const isMatch =  crypto.createHash("sha256").update(currentPassword).digest("hex") === user.password;
+  if (!isMatch) {
+    res.status(401);
+    throw new Error("Current password is incorrect");
+  }
+    
+
+  user.password = crypto.createHash("sha256").update(newPassword).digest("hex");
+  await user.save();
+
+  res.status(200).json({ message: "Password updated successfully" });
+});
+
+
 // @desc    Get current user's information
 // @route   GET /api/auth/me
 // @access  Private

@@ -196,5 +196,5 @@ Build the Pending Approvals page - GET /api/device/pending, with Approve/Reject 
 Phase 7:✅ Live map + persistent Socket.io connection
 Build the Leaflet map (reusing the DeviceMap logic from before) as its own full page, plus wire up socket.io-client with a SocketContext so the connection persists across navigation instead of disconnecting every time you switch pages (the bug you fixed on mobile applies here too).
 8
-Phase 8: Polish (loading states, empty states, visual design)
+Phase 8:✅ Polish (loading states, empty states, visual design)
 Polish pass: loading skeletons instead of blank text, empty states, consistent error toasts (react-hot-toast), and a visual design pass using the frontend-design principles instead of raw inline styles.

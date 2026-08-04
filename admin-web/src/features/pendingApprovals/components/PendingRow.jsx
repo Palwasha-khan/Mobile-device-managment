@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { approveDevice, rejectDevice } from "../../../api/endpoints/deviceApi";
+import toast from "react-hot-toast";
 
 export default function PendingRow({ device }) {
   const [actioning, setActioning] = useState(null);
@@ -13,7 +14,7 @@ export default function PendingRow({ device }) {
       queryClient.invalidateQueries(["pendingDevices"]);
       queryClient.invalidateQueries(["devices"]);
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to approve");
+      toast.error(err.response?.data?.message || "Failed to approve");
     } finally {
       setActioning(null);
     }
@@ -27,7 +28,7 @@ export default function PendingRow({ device }) {
       queryClient.invalidateQueries(["pendingDevices"]);
       queryClient.invalidateQueries(["devices"]);
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to reject");
+      toast.error(err.response?.data?.message || "Failed to reject");
     } finally {
       setActioning(null);
     }

@@ -7,6 +7,7 @@ import DevicesListPage from "../features/devices/DevicesListPage";
 import DeviceDetailPage from "../features/devices/DeviceDetailPage";
 import PendingApprovalsPage from "../features/pendingApprovals/PendingApprovalsPage";
 import LiveMapPage from "../features/map/LiveMapPage";
+import SettingsPage from "../features/settings/SettingsPage";
 
 export default function AppRoutes() {
   return (
@@ -59,6 +60,16 @@ export default function AppRoutes() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <LiveMapPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <SettingsPage />
                 </DashboardLayout>
               </ProtectedRoute>
             }

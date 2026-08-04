@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { sendCommand } from "../../../api/endpoints/deviceApi";
+import toast from "react-hot-toast";
 
 const commands = [
   { type: "ring_alert", label: "🔔 Ring Alert" },
@@ -8,21 +9,19 @@ const commands = [
 ];
 
 export default function CommandPanel({ deviceId }) {
-  const [sending, setSending] = useState(null);
-  const [message, setMessage] = useState(null);
+  const [sending, setSending] = useState(null); 
 
   const handleSend = async (commandType) => {
-    setSending(commandType);
-    setMessage(null);
-    try {
-      await sendCommand(deviceId, commandType);
-      setMessage("Command sent - delivered instantly if the app is open.");
-    } catch (err) {
-      setMessage(err.response?.data?.message || "Failed to send command.");
-    } finally {
-      setSending(null);
-    }
-  };
+  setSending(commandType);
+  try {
+    await sendCommand(deviceId, commandType);
+    toast.success("Command sent to device");
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed to send command");
+  } finally {
+    setSending(null);
+  }
+};
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-4">
