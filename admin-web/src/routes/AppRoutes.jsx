@@ -5,6 +5,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import DashboardPage from "../features/dashboard/DashboardPage";
 import DevicesListPage from "../features/devices/DevicesListPage";
 import DeviceDetailPage from "../features/devices/DeviceDetailPage";
+import PendingApprovalsPage from "../features/pendingApprovals/PendingApprovalsPage";
 
 export default function AppRoutes() {
   return (
@@ -41,6 +42,16 @@ export default function AppRoutes() {
                 </ProtectedRoute>
             }
             />
+            <Route
+            path="/pending-approvals"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <PendingApprovalsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
     </Routes>
   );
 }

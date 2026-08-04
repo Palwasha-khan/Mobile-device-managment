@@ -173,7 +173,7 @@ export const getAllDevices = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
 
-  const filter = {};
+  const filter = { status: "approved"};
 
   if (req.query.search) {
     const searchRegex = new RegExp(req.query.search, "i");
@@ -236,9 +236,9 @@ export const getDeviceStats = asyncHandler(async (req, res) => {
 
   const [totalDevices, activeDevices, compliantDevices, pendingDevices] =
     await Promise.all([
-      Device.countDocuments(),
-      Device.countDocuments({ lastPingAt: { $gte: fifteenMinutesAgo } }),
-      Device.countDocuments({ isCompliant: true }),
+      Device.countDocuments({ status: "approved" }),
+      Device.countDocuments({ status: "approved", lastPingAt: { $gte: fifteenMinutesAgo } }),
+      Device.countDocuments({ status: "approved", isCompliant: true }),
       Device.countDocuments({ status: "pending" }),
     ]);
 
