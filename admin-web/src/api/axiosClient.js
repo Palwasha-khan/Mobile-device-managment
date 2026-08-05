@@ -2,13 +2,14 @@ import axios from "axios";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true, // REQUIRED - lets the browser send/receive the refreshToken cookie
+  withCredentials: true, 
 });
 
-// In-memory storage for the current access token. NOT localStorage -
-// access tokens are short-lived and only need to survive within the
-// current tab session; keeping them out of localStorage also avoids
-// exposing them to XSS attacks that read localStorage.
+export const rawAxios = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true,
+});
+
 let accessToken = null;
 
 export const setAccessToken = (token) => {
@@ -25,9 +26,7 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Track whether a refresh is already in progress, so if 5 requests fail
-// at once (all with expired tokens), we only call /refresh-token ONCE,
-// not 5 times in parallel
+ 
 let isRefreshing = false;
 let refreshSubscribers = [];
 
@@ -64,9 +63,8 @@ axiosClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // No body needed here - the browser sends the refreshToken
-        // cookie automatically because of withCredentials: true
-        const { data } = await axiosClient.post("/auth/refresh-token");
+        
+        const { data } = await rawAxios.post("/auth/refresh-token");
 
         setAccessToken(data.accessToken);
         isRefreshing = false;
@@ -76,11 +74,7 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest); // retry the original failed request
       } catch (refreshError) {
         isRefreshing = false;
-        setAccessToken(null);
-        // Refresh itself failed - the session is truly over, force a
-        // redirect to login. AuthContext will handle this properly once
-        // built in Phase 2; for now this is the fallback.
-        window.location.href = "/login";
+        setAccessToken(null);  
         return Promise.reject(refreshError);
       }
     }

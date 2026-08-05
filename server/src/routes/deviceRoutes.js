@@ -9,6 +9,7 @@ import {
   sendCommand,
   updateDevice,
   getDeviceStats,
+  getPendingCount,
 } from "../controllers/deviceController.js";
 import { protect, requireRole } from "../middleware/authMiddleware.js";
 import {
@@ -21,6 +22,7 @@ const router = express.Router();
 
 // Admin approval workflow
 router.get("/pending", protect, requireRole("admin"), getPendingDevices);
+router.get("/pending-count", protect, requireRole("admin"), getPendingCount);
 router.patch("/:id/approve", protect, requireRole("admin"), approveDevice);
 router.patch("/:id/reject", protect, requireRole("admin"), rejectDevice);
 

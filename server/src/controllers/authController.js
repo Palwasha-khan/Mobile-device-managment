@@ -1,26 +1,27 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import Device from "../models/Device.js";
-import crypto from "crypto";
+import crypto, { hash } from "crypto";
 import asyncHandler from "../utils/asyncHandler.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens.js";
 import { refreshTokenCookieOptions } from "../utils/cookieOptions.js";
+import { comparePassword, hashPassword, hashToken } from "../utils/crypto.js";
 
 // @route   POST /api/auth/login
 export const adminLogin = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-
-  console.log("REQ BODY:", req.body);
+  const { email, password } = req.body; 
 
   const user = await User.findOne({ email });
-  const  hashedpassword = crypto.createHash("sha256").update(password).digest("hex");
-  if (!user ||  hashedpassword !== user.password) {
+ if (!user || !(await comparePassword(password, user.password))){
     res.status(401);
     throw new Error("Invalid email or password");
   }
 
   const accessToken = generateAccessToken(user._id, "admin");
   const refreshToken = generateRefreshToken(user._id, "admin");
+
+   user.refreshTokenHash =await hashToken(refreshToken);
+  await user.save();
 
   res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
 
@@ -49,8 +50,7 @@ export const createNewAdmin = asyncHandler(async (req, res) => {
   }
 
   // Hash password
-  const hashedPassword = crypto.createHash("sha256").update(password).digest("hex");
-
+  const hashedPassword =  hashPassword(password);
   // Create new user explicitly set to 'admin' role
   const adminUser = await User.create({
     name,
@@ -82,14 +82,14 @@ export const changePassword = asyncHandler(async (req, res) => {
     throw new Error("Account not found");
   }
 
-  const isMatch =  crypto.createHash("sha256").update(currentPassword).digest("hex") === user.password;
+  const isMatch =  await comparePassword(currentPassword,user.password)
   if (!isMatch) {
     res.status(401);
     throw new Error("Current password is incorrect");
   }
     
 
-  user.password = crypto.createHash("sha256").update(newPassword).digest("hex");
+  user.password = await hashPassword(newPassword)
   await user.save();
 
   res.status(200).json({ message: "Password updated successfully" });
@@ -129,7 +129,7 @@ export const employeeRegister = asyncHandler(async (req, res) => {
     throw new Error("An account with this email or device ID already exists");
   }
 
-  const hashedPassword = crypto.createHash("sha256").update(password).digest("hex");
+  const hashedPassword = await hashPassword(password)
 
   const device = await Device.create({
     employeeName,
@@ -139,6 +139,14 @@ export const employeeRegister = asyncHandler(async (req, res) => {
     status: "pending",
   });
 
+  const io = req.app.get("io");
+  if (io) { 
+    io.emit("new-device-request", {
+      deviceId: device.deviceId,
+      employeeName: device.employeeName,
+      status: device.status,
+    });
+  }
   res.status(201).json({
     message: "Registration submitted. An admin must approve your account before you can log in.",
     device: { id: device._id, employeeName: device.employeeName, status: device.status },
@@ -149,9 +157,8 @@ export const employeeRegister = asyncHandler(async (req, res) => {
 export const employeeLogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const device = await Device.findOne({ email });
-   const  hashedpassword = crypto.createHash("sha256").update(password).digest("hex");
-  if (!device ||  hashedpassword !== device.password) {
+ const device = await Device.findOne({ email });
+  if (!device || !(await comparePassword(password, device.password))) {
     res.status(401);
     throw new Error("Invalid email or password");
   }
@@ -168,17 +175,21 @@ export const employeeLogin = asyncHandler(async (req, res) => {
   const accessToken = generateAccessToken(device._id, "employee");
   const refreshToken = generateRefreshToken(device._id, "employee");
 
+   device.refreshTokenHash = hashToken(refreshToken);
+   await device.save();
+
   res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
 
   res.status(200).json({
     accessToken,
+    refreshToken,
     device: { id: device._id, employeeName: device.employeeName, deviceId: device.deviceId, status: device.status },
   });
 });
 
 // @route   POST /api/auth/refresh-token
-export const refreshToken = asyncHandler(async (req, res) => {
-  const incomingToken = req.cookies.refreshToken;
+export const refreshToken = asyncHandler(async (req, res) => { 
+  const incomingToken = req.cookies.refreshToken 
 
   if (!incomingToken) {
     res.status(401);
@@ -196,35 +207,42 @@ export const refreshToken = asyncHandler(async (req, res) => {
   const Model = decoded.role === "admin" ? User : Device;
   const account = await Model.findById(decoded.id);
 
-  if (!account) {
+  if (!account || !account.refreshTokenHash) {
     res.status(401);
     throw new Error("Refresh token invalid - please log in again");
   }
  
+  if (hashToken(incomingToken) !== account.refreshTokenHash) {
+    res.status(401);
+    throw new Error("Refresh token invalid - please log in again");
+  }
 
   const newAccessToken = generateAccessToken(account._id, decoded.role);
   const newRefreshToken = generateRefreshToken(account._id, decoded.role);
 
+  account.refreshTokenHash = hashToken(newRefreshToken);
+  await account.save();
+
   res.cookie("refreshToken", newRefreshToken, refreshTokenCookieOptions);
 
-  res.status(200).json({ accessToken: newAccessToken });
+  res.status(200).json({
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+  });
 });
 
 // @route   POST /api/auth/logout
 export const logout = asyncHandler(async (req, res) => {
-  const incomingToken = req.cookies.refreshToken;
+  const incomingToken = req.cookies.refreshToken || req.body.refreshToken;
 
-  if (!incomingToken) {
-    res.status(401);
-    throw new Error("No refresh token provided");
-  }
-
-  let decoded;
-  try {
-    decoded = jwt.verify(incomingToken, process.env.REFRESH_TOKEN_SECRET);
-  } catch (error) {
-    res.status(401);
-    throw new Error("Refresh token invalid or expired - please log in again");
+  if (incomingToken) {
+    try {
+      const decoded = jwt.verify(incomingToken, process.env.REFRESH_TOKEN_SECRET);
+      const Model = decoded.role === "admin" ? User : Device;
+      await Model.findByIdAndUpdate(decoded.id, { refreshTokenHash: null });
+    } catch (error) {
+      // already invalid/expired - nothing to revoke, that's fine
+    }
   }
 
   res.clearCookie("refreshToken", { path: "/api/auth" });

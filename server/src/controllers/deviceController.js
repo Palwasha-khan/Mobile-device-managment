@@ -9,6 +9,14 @@ import { approvalEmailTemplate, rejectionEmailTemplate } from "../utils/emailTem
 
 // ---------- Admin approval workflow ---------
 
+// @desc    Get pending registration request count
+// @route   GET /api/device/pending-count
+// @access  Private (Admin)
+export const getPendingCount = asyncHandler(async (req, res) => {
+  const count = await Device.countDocuments({ status: "pending" });
+  res.status(200).json({ count });
+});
+
 
 // @route   GET /api/device/pending
 // @access  Private (admin)

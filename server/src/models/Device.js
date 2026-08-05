@@ -29,8 +29,7 @@ const deviceSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-
-    // --- Added fields for telemetry and ping compliance ---
+ 
     permissions: {
       camera: {
         type: String,
@@ -58,6 +57,10 @@ const deviceSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    refreshTokenHash: {
+  type: String,
+  default: null,
+},
   },
   { timestamps: true }
 );

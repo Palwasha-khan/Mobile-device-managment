@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { loginRequest, logoutRequest, refreshRequest ,getMe} from "../api/endpoints/authApi";
-import { setAccessToken } from "../api/axiosClient";
+import axiosClient, { setAccessToken, rawAxios } from "../api/axiosClient";
 
 const AuthContext = createContext(null);
 
@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const { data } = await refreshRequest();
+        const { data } = await rawAxios.post("/auth/refresh-token");
         setAccessToken(data.accessToken);
 
         const meResponse = await getMe();

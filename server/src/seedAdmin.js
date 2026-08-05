@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import crypto from "crypto";
 import User from "./models/User.js"; // Adjust path to your User model
 import connectDB from "./config/db.js";
+import { hashPassword } from "./utils/crypto.js";
 
 dotenv.config();
 
@@ -23,8 +24,7 @@ const seedAdmin = async () => {
     }
 
     // 3. Hash the admin password
-    const hashedPassword = crypto.createHash("sha256").update(adminPassword).digest("hex");
-
+    const hashedPassword = await hashPassword(adminPassword);
     // 4. Create the Admin User
     const adminUser = new User({
       name: "System Admin",

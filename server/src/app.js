@@ -20,7 +20,7 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(cookieParser()); // REQUIRED - populates req.cookies
+app.use(cookieParser());  
 
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
