@@ -1,61 +1,4 @@
-# Mobile-device-managment
-
-server/
-├── .env                          # Real secrets (gitignored, never committed)
-├── .env.example                  # Placeholder values (safe to commit)
-├── .gitignore
-├── package.json
-├── package-lock.json
-│
-└── src/
-    ├── server.js                 # Entry point - Express + http server + Socket.io setup
-    │
-    ├── config/
-    │   └── db.js                 # MongoDB connection logic
-    │
-    ├── models/
-    │   ├── User.js                # Admin accounts
-    │   ├── Device.js              # Employee/phone accounts + status, permissions, compliance
-    │   ├── LocationLog.js         # GPS ping history
-    │   ├── PermissionLog.js       # Camera/mic permission change history
-    │   └── Command.js             # Remote commands sent by admin
-    │
-    ├── controllers/
-    │   ├── authController.js      # adminLogin, employeeLogin, employeeRegister
-    │   └── deviceController.js    # sendPing, getAllDevices, getDeviceHistory,
-    │                               # sendCommand, approveDevice, rejectDevice, updateDevice
-    │
-    ├── routes/
-    │   ├── authRoutes.js
-    │   └── deviceRoutes.js
-    │
-    ├── middleware/
-    │   ├── authMiddleware.js      # protect + requireRole (JWT verification)
-    │   ├── errorMiddleware.js     # centralized error handler (Step 4 of our plan)
-    │   └── rateLimiter.js         # login rate limiting (Step 2 of our plan)
-    │
-    ├── validators/
-    │   ├── authValidators.js      # express-validator rules for login/register
-    │   └── deviceValidators.js    # express-validator rules for ping/command
-    │
-    ├── utils/
-    │   ├── generateToken.js       # JWT signing helper
-    │   └── asyncHandler.js        # wraps controllers, removes repeated try/catch
-    │
-    ├── seedAdmin.js               # One-time script to create first admin
-    ├── seedEmployee.js            # One-time script to create a test employee
-    │
-    └── tests/
-        ├── complianceEngine.test.js   # Unit tests for the isCompliant logic
-        └── auth.test.js                # Tests for JWT middleware (valid/invalid/missing token)
-What's new compared to what you had before
-validators/ — a dedicated folder (not just middleware) since these rules are meaningfully different from auth/error middleware — this is a clean separation reviewers tend to notice
-middleware/errorMiddleware.js and utils/asyncHandler.js — this is the centralized error handling from Step 4, replacing repeated try/catch blocks in every controller
-middleware/rateLimiter.js — isolated so it's reusable across login and register routes
-tests/ — sits inside src/ (a common convention) so Jest can find it alongside the code it's testing
  
-
-
 Phase	Status
 1. Secrets/env locked down	✅ Done
 2. CORS + rate limiting	✅ Done (restricted CORS, authLimiter on login/register)
@@ -66,19 +9,7 @@ Phase	Status
 7. Basic logging	✅ Done (morgan)
 8. Deploy to a live URL	❌ Not done
 
---Features-- 
-
-❌ LocationLog model + GPS ping endpoint
-❌ PermissionLog model + camera/mic permission tracking
-❌ The actual compliance engine (isCompliant calculation)
-❌ GET /api/device (list all devices for the dashboard)
-❌ Socket.io (live map updates, real-time command delivery)
-❌ Command model + remote command system
-❌ Device detail/history endpoints
-✅ Employee registration + admin approval (new — this is actually beyond the original plan)
-✅ Admin edit rights — you mentioned wanting this, but we haven't built the edit endpoint yet either
-
-
+ 
 admin-web/
 ├── .env                          # VITE_API_URL=http://localhost:5000/api
 ├── .gitignore
@@ -174,27 +105,82 @@ admin-web/
         └── constants.js            # command types, colors, etc.
 
 
-        1
-Phase 1:✅ Project setup + the axios refresh interceptor
-Scaffold with Vite, install core dependencies (react-router-dom, axios, @tanstack/react-query, socket.io-client), set up the folder structure, and build the axios instance with an interceptor that automatically refreshes the access token on a 401 and retries the failed request once. This is the piece that makes the whole access+refresh token system actually work seamlessly in the UI.
+Full Revision — Everything Built So Far
+Backend (server/)
+
+Auth
+
+Admin login (POST /api/auth/login) — email/password, returns access + refresh token
+Employee login (POST /api/auth/employee-login) — same pattern, blocked unless status: "approved"
+Employee self-registration (POST /api/auth/employee-register) — starts as status: "pending"
+Refresh token endpoint (POST /api/auth/refresh-token) — accepts token via cookie (web) or request body (mobile), rotates on use
+Logout (POST /api/auth/logout) — revokes the stored refresh token hash, so it can't be reused
+GET /api/auth/me — returns current logged-in account's info, used to restore session on page reload
+POST /api/auth/change-password
+Custom createNewAdmin route — protected, admin-only, creates a new admin directly
+
+Security hardening
+
+Access tokens (15 min) + refresh tokens (30 days), separate secrets
+Passwords hashed with Node's crypto.scrypt (salted, slow — done in controllers, not model hooks)
+Rate limiting on login/register routes
+Input validation (express-validator) on auth routes
+Centralized error handling (asyncHandler + errorMiddleware)
+Restricted CORS (credentials: true, specific origin)
+helmet, morgan logging
+
+Device/employee management
+
+GET /api/device/pending — list pending registrations
+PATCH /api/device/:id/approve / reject — with email notifications (nodemailer)
+GET /api/device — paginated, searchable (name/email), filterable (compliance), approved-only by default
+GET /api/device/:id/history — location + permission history
+PUT /api/device/:id — admin edits employee details
+PATCH /api/device/:id/make-admin — promote employee to admin
+
+Core MDM functionality
+
+POST /api/device/ping — GPS + camera/mic permission ingestion
+Compliance engine — isCompliant = camera granted AND mic granted AND GPS active, computed on every ping
+LocationLog + PermissionLog — full history tracking, changes-only logging for permissions
+GET /api/device/stats — dashboard summary counts (approved-only)
+Socket.io — live device-update broadcasts, room-based targeting per device
+POST /api/device/:id/command — ring alert / lock warning / compliance warning, delivered via socket room
+Database indexes (isCompliant, status) + .lean() on read-only queries
+Admin-web (admin-web/)
+Axios client with automatic access-token-refresh interceptor (queues parallel requests during refresh)
+AuthContext — login, logout, session restore via /auth/me
+SocketContext — one persistent connection for the whole admin session, survives navigation
+Dashboard — summary cards + compliance pie chart, auto-refreshing
+Devices list — search, compliance filter, pagination, Clear Filters
+Device detail — location/permission history tabs, edit form, command panel, promote-to-admin
+Pending Approvals page — approve/reject with live list updates
+Live Map — Leaflet, defaults to Pakistan view, real-time pin updates via socket
+Settings page — profile view, change password
+Tailwind throughout, toast notifications, skeleton loading states, empty states
+
+That's a genuinely complete, working MDM admin system. Solid foundation.
+
+Now: Mobile App (Employee Device Agent) — from scratch
+Phase plan
+1
+Phase 1: Project setup + axios refresh interceptor
+Scaffold a fresh Expo project, install core dependencies (axios, expo-secure-store, expo-location, expo-camera, expo-audio, socket.io-client, @react-navigation), set up the folder structure, and build the axios client with the same access/refresh-token interceptor pattern as admin-web - except refresh token comes from SecureStore, not a cookie.
 2
-Phase 2:✅ Auth - login, context, protected routes
-Build AuthContext (login, logout, current admin state), the Login page, and ProtectedRoute. Test that login works, the access token attaches to requests, and refresh-on-expiry actually happens (you can fake this by temporarily setting ACCESS_TOKEN_EXPIRES_IN to something very short like 30s on the backend to watch it refresh live).
+Phase 2: Auth - login, register, session persistence
+Build AuthContext (login, register, logout, session restore), the Login screen, and the Register screen (with a 'pending approval' confirmation state after submitting). Test against your real backend's employee-login and employee-register routes.
 3
-Phase 3:✅ Dashboard layout shell (sidebar + topbar)
-Build the persistent shell every authenticated page lives inside: Sidebar (nav links), Topbar (admin name, logout), and DashboardLayout wrapping them. Get routing fully wired so navigating between pages doesn't lose the sidebar/topbar.
+Phase 3: Home screen + manual ping
+Build the Enrollment Status / Home screen: shows connection status, employee info, and a manual 'Send Ping' button that requests location + camera + mic permissions and posts to /api/device/ping, displaying the compliance result the server sends back.
 4
-Phase 4:✅ Dashboard home page (summary cards + chart)
-Build the actual dashboard home page: summary cards (Total Devices, Active, Compliant, Non-Compliant), and a compliance breakdown chart. This is largely a GET /api/device request summarized client-side, or you can add a small /api/device/stats backend route later if you want the counting done server-side instead.
+Phase 4: Background ping task
+Move from manual button-press pings to a real background task using expo-location's background location API, so pings happen automatically on an interval even when the app isn't in the foreground (within Expo Go's real limitations, which we'll work within honestly).
 5
-Phase 5:✅ Devices list + device detail/edit/commands
-Build the devices table using the paginated GET /api/device endpoint from Phase 5 of the backend plan - search, sort, pagination controls, compliance badges. Then the device detail page: location history table, permission history table, edit form (PUT /api/device/:id), and the 3 remote command buttons.
+Phase 5: Socket.io command listener
+Connect to Socket.io on login, register the device into its room, and react to incoming commands (ring_alert, lock_warning, compliance_warning) with vibration + alert - same pattern as before, but built cleanly from scratch this time with the persistent-connection fix already applied from day one instead of retrofitted.
 6
-Phase 6: ✅Pending approvals page (new - didn't exist before)
-Build the Pending Approvals page - GET /api/device/pending, with Approve/Reject buttons per row. This is a feature your backend already supports but admin-web has never had a UI for yet.
+Phase 6: Polish + visual design
+Visual pass with a consistent design system (matching admin-web's Tailwind-inspired palette, even though React Native doesn't use Tailwind directly - NativeWind is an option if you want actual Tailwind classes in RN), proper loading/error states, and a settings/logout screen.
 7
-Phase 7:✅ Live map + persistent Socket.io connection
-Build the Leaflet map (reusing the DeviceMap logic from before) as its own full page, plus wire up socket.io-client with a SocketContext so the connection persists across navigation instead of disconnecting every time you switch pages (the bug you fixed on mobile applies here too).
-8
-Phase 8:✅ Polish (loading states, empty states, visual design)
-Polish pass: loading skeletons instead of blank text, empty states, consistent error toasts (react-hot-toast), and a visual design pass using the frontend-design principles instead of raw inline styles.
+Phase 7: EAS Build - real installable APK
+Build a real installable APK via EAS Build (not just Expo Go), so the app can actually be demoed/installed without needing the Expo Go app - important for your portfolio demo video plan.y
