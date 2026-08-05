@@ -1,166 +1,97 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-  Alert,
-} from "react-native";
+import { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import * as Location from "expo-location";
 import { Camera } from "expo-camera";
-import { Audio } from "expo-audio";
+import { requestRecordingPermissionsAsync } from "expo-audio";
 import { useAuth } from "../context/AuthContext";
 import { sendPingRequest } from "../api/endpoints/deviceApi";
 
 export default function HomeScreen() {
   const { device, logout } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [permissionsStatus, setPermissionsStatus] = useState(null);
-  const [pingResult, setPingResult] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [lastResult, setLastResult] = useState(null);
 
   const handleSendPing = async () => {
-    setLoading(true);
+    setSending(true);
+    setLastResult(null);
     try {
-      // 1. Request Location Permissions & Coords
-      const { status: locStatus } = await Location.requestForegroundPermissionsAsync();
-      let lat = null;
-      let lng = null;
-
-      if (locStatus === "granted") {
-        const position = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        lat = position.coords.latitude;
-        lng = position.coords.longitude;
+      // 1. Location permission + coordinates
+      const { status: locationStatus } = await Location.requestForegroundPermissionsAsync();
+      if (locationStatus !== "granted") {
+        Alert.alert("Permission needed", "Location permission is required to send a ping.");
+        setSending(false);
+        return;
       }
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
 
-     // 2. Request Camera Permissions
+      // 2. Camera permission
+      const cameraResult = await Camera.requestCameraPermissionsAsync();
+      const cameraPermission = cameraResult.status; // "granted" or "denied"
 
-     const cameraPerm = await Camera.requestCameraPermissionsAsync();
+      // 3. Microphone permission
+      const micResult = await requestRecordingPermissionsAsync();
+      const microphonePermission = micResult.granted ? "granted" : "denied";
 
-      let micGranted = false;
-      if (typeof Camera.requestMicrophonePermissionsAsync === "function") {
-        const micPerm = await Camera.requestMicrophonePermissionsAsync();
-        micGranted = micPerm.granted;
-      }
+      // 4. Send everything to the backend
+      const response = await sendPingRequest(latitude, longitude, cameraPermission, microphonePermission);
 
-      const cameraPermission = cameraPerm.granted ? "granted" : "denied";
-      const microphonePermission = micGranted ? "granted" : "denied";
-      setPermissionsStatus({
-        location: locStatus === "granted" ? "GRANTED" : "DENIED",
-        camera: cameraPermission,
-        microphone: microphonePermission,
-      });
-
-      // 3. Trigger Ping with matching signature: (lat, lng, cameraPermission, microphonePermission)
-      const response = await sendPingRequest(
-        lat,
-        lng,
-        cameraPermission,
-        microphonePermission
-      );
-
-      setPingResult({
-        success: true,
-        data: response.data,
-        time: new Date().toLocaleTimeString(),
-      });
-    } catch (error) {
-      const errorMsg =
-        error.response?.data?.message || error.message || "Failed to send ping";
-      Alert.alert("Ping Error", errorMsg);
-      setPingResult({
-        success: false,
-        error: errorMsg,
-        time: new Date().toLocaleTimeString(),
-      });
+      setLastResult(response.data.device);
+    } catch (err) {
+      const message = err.response?.data?.message || "Failed to send ping. Check your connection.";
+      Alert.alert("Error", message);
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Device Info Card */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>📱 Device Information</Text>
-        <Text style={styles.infoText}>
-          <Text style={styles.label}>Employee: </Text>
-          {device?.employeeName || device?.email || "Active User"}
-        </Text>
-        <Text style={styles.infoText}>
-          <Text style={styles.label}>Device ID: </Text>
-          {device?.id || device?.deviceId || "N/A"}
-        </Text>
-      </View>
+    <View style={styles.container}>
+      <Text style={styles.title}>Enrollment Status</Text>
+      <Text style={styles.info}>Employee: {device?.employeeName}</Text>
+      <Text style={styles.info}>Device ID: {device?.deviceId}</Text>
+      <Text style={styles.statusConnected}>● Connected to server</Text>
 
-      {/* Ping Trigger Button */}
-      <TouchableOpacity
-        style={[styles.pingButton, loading && styles.buttonDisabled]}
-        onPress={handleSendPing}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={styles.pingButtonText}>📡 Send Manual Ping</Text>
-        )}
+      <TouchableOpacity style={styles.button} onPress={handleSendPing} disabled={sending}>
+        {sending ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send Test Location</Text>}
       </TouchableOpacity>
 
-      {/* Permissions Audit */}
-      {permissionsStatus && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🔒 Hardware Permissions</Text>
-          <Text style={styles.infoText}>Location: {permissionsStatus.location}</Text>
-          <Text style={styles.infoText}>Camera: {permissionsStatus.camera}</Text>
-          <Text style={styles.infoText}>Microphone: {permissionsStatus.microphone}</Text>
-        </View>
-      )}
-
-      {/* Compliance Ping Output */}
-      {pingResult && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>⚡ Server Compliance Response</Text>
-          <Text style={styles.infoText}>Timestamp: {pingResult.time}</Text>
-          <Text style={styles.infoText}>
-            Status: {pingResult.success ? "🟢 Success" : "🔴 Error"}
+      {lastResult && (
+        <View style={styles.resultBox}>
+          <Text style={styles.resultTitle}>Last ping saved on server:</Text>
+          <Text>Lat: {lastResult.lastKnownLocation.lat}</Text>
+          <Text>Lng: {lastResult.lastKnownLocation.lng}</Text>
+          <Text>At: {new Date(lastResult.lastPingAt).toLocaleTimeString()}</Text>
+          <Text style={{ marginTop: 8, fontWeight: "600" }}>Camera: {lastResult.permissions?.camera}</Text>
+          <Text style={{ fontWeight: "600" }}>Microphone: {lastResult.permissions?.microphone}</Text>
+          <Text
+            style={{
+              marginTop: 8,
+              fontWeight: "bold",
+              color: lastResult.isCompliant ? "#16a34a" : "#dc2626",
+            }}
+          >
+            Status: {lastResult.isCompliant ? "Compliant" : "Non-Compliant"}
           </Text>
-          {pingResult.data && (
-            <View style={styles.codeBox}>
-              <Text style={styles.jsonText}>
-                {JSON.stringify(pingResult.data, null, 2)}
-              </Text>
-            </View>
-          )}
         </View>
       )}
 
       <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>Sign Out</Text>
+        <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingTop: 60, backgroundColor: "#f4f6f8", flexGrow: 1 },
-  card: { backgroundColor: "#fff", borderRadius: 8, padding: 16, marginBottom: 16 },
-  cardTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 8 },
-  infoText: { fontSize: 14, color: "#374151", marginBottom: 4 },
-  label: { fontWeight: "600" },
-  pingButton: {
-    backgroundColor: "#2563eb",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  buttonDisabled: { backgroundColor: "#93c5fd" },
-  pingButtonText: { color: "#fff", fontWeight: "bold" },
-  logoutButton: { padding: 12, alignItems: "center", marginTop: "auto" },
-  logoutText: { color: "#dc2626", fontWeight: "600" },
-  codeBox: { backgroundColor: "#1e293b", padding: 10, borderRadius: 6, marginTop: 8 },
-  jsonText: { color: "#38bdf8", fontFamily: "monospace", fontSize: 12 },
+  container: { flex: 1, padding: 24, paddingTop: 60, backgroundColor: "#f4f6f8" },
+  title: { fontSize: 20, fontWeight: "bold", marginBottom: 16 },
+  info: { fontSize: 14, color: "#333", marginBottom: 4 },
+  statusConnected: { color: "green", marginBottom: 24, fontWeight: "600" },
+  button: { backgroundColor: "#2563eb", padding: 14, borderRadius: 8, alignItems: "center", marginBottom: 20 },
+  buttonText: { color: "#fff", fontWeight: "bold" },
+  resultBox: { backgroundColor: "#fff", padding: 16, borderRadius: 8, marginBottom: 20 },
+  resultTitle: { fontWeight: "bold", marginBottom: 6 },
+  logoutButton: { marginTop: "auto", alignItems: "center", padding: 12 },
+  logoutText: { color: "#999" },
 });

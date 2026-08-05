@@ -109,12 +109,11 @@ export const sendPing = asyncHandler(async (req, res) => {
       }
     },
     { new: true, runValidators: true }
-  );
-  console.log("before",device.permissions)
+  ); 
   const changes = [];
   const oldCamera = existingDevice?.permissions?.camera || "denied";
 const oldMicrophone = existingDevice?.permissions?.microphone || "denied";
-console.log(device.permissions)
+ 
 
 if (oldCamera !== newCamera) {
   changes.push({
@@ -155,8 +154,7 @@ if (oldMicrophone !== newMicrophone) {
       isCompliant: device.isCompliant,
       permissions: device.permissions,
     });
-  }
-  console.log("after",device.permissions)
+  } 
 
   res.status(200).json({
     message: "Ping received",

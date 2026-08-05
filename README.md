@@ -163,15 +163,7 @@ That's a genuinely complete, working MDM admin system. Solid foundation.
 
 Now: Mobile App (Employee Device Agent) — from scratch
 Phase plan
-1
-Phase 1: Project setup + axios refresh interceptor
-Scaffold a fresh Expo project, install core dependencies (axios, expo-secure-store, expo-location, expo-camera, expo-audio, socket.io-client, @react-navigation), set up the folder structure, and build the axios client with the same access/refresh-token interceptor pattern as admin-web - except refresh token comes from SecureStore, not a cookie.
-2
-Phase 2: Auth - login, register, session persistence
-Build AuthContext (login, register, logout, session restore), the Login screen, and the Register screen (with a 'pending approval' confirmation state after submitting). Test against your real backend's employee-login and employee-register routes.
-3
-Phase 3: Home screen + manual ping
-Build the Enrollment Status / Home screen: shows connection status, employee info, and a manual 'Send Ping' button that requests location + camera + mic permissions and posts to /api/device/ping, displaying the compliance result the server sends back.
+ 
 4
 Phase 4: Background ping task
 Move from manual button-press pings to a real background task using expo-location's background location API, so pings happen automatically on an interval even when the app isn't in the foreground (within Expo Go's real limitations, which we'll work within honestly).

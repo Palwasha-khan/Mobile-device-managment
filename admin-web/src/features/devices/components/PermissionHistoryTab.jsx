@@ -1,28 +1,55 @@
-export default function PermissionHistoryTab({ history }) {
+// PermissionHistoryTab.jsx
+import { ShieldAlert, ShieldCheck } from "lucide-react";
+
+export default function PermissionHistoryTab({ history = [] }) {
   if (history.length === 0) {
-    return <p className="text-slate-400 text-sm py-8 text-center">No permission changes recorded yet.</p>;
+    return (
+      <div className="py-12 text-center text-slate-400 text-xs">
+        No permission changes detected.
+      </div>
+    );
   }
 
   return (
-    <table className="w-full text-sm">
-      <thead className="text-left text-slate-500">
-        <tr>
-          <th className="py-2">Time</th>
-          <th className="py-2">Permission</th>
-          <th className="py-2">Old</th>
-          <th className="py-2">New</th>
-        </tr>
-      </thead>
-      <tbody>
-        {history.map((entry) => (
-          <tr key={entry._id} className="border-t border-slate-100">
-            <td className="py-2 text-slate-600">{new Date(entry.timestamp).toLocaleString()}</td>
-            <td className="py-2 text-slate-600 capitalize">{entry.permissionType}</td>
-            <td className="py-2 text-slate-600">{entry.oldState}</td>
-            <td className="py-2 text-slate-600">{entry.newState}</td>
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs text-left border-collapse">
+        <thead>
+          <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+            <th className="py-2.5 px-3">Timestamp</th>
+            <th className="py-2.5 px-3">Permission Key</th>
+            <th className="py-2.5 px-3">State Change</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {history.map((entry) => {
+            const isGranted = entry.newState?.toLowerCase() === "granted" || entry.newState === true;
+
+            return (
+              <tr key={entry._id || entry.timestamp} className="hover:bg-slate-50/50">
+                <td className="py-2.5 px-3 text-slate-600 font-medium">
+                  {new Date(entry.timestamp).toLocaleString(undefined, {
+                    dateStyle: 'short',
+                    timeStyle: 'medium'
+                  })}
+                </td>
+                <td className="py-2.5 px-3 text-slate-800 font-semibold capitalize">
+                  {entry.permissionType}
+                </td>
+                <td className="py-2.5 px-3">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[11px] ${
+                    isGranted 
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-100" 
+                      : "bg-rose-50 text-rose-700 border border-rose-100"
+                  }`}>
+                    {isGranted ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
+                    {entry.oldState || "UNKNOWN"} → {entry.newState}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
