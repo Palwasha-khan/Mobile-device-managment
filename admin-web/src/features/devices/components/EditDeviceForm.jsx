@@ -58,7 +58,6 @@ export default function EditDeviceForm({ device }) {
       >
         {saving ? "Saving..." : "Save Changes"}
       </button>
-      {message && <p className="text-sm text-slate-500">{message}</p>}
     </form>
   );
 }

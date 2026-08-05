@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import PendingApprovalScreen from "../screens/PendingApprovalScreen";
+import HomeScreen from "../screens/HomeScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -22,15 +23,12 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {device ? (
-          // Phase 3 will add HomeScreen here - placeholder for now
-          <Stack.Screen name="Home">
-            {() => (
-              <View style={styles.loading}>
-                <ActivityIndicator size="large" />
-              </View>
-            )}
-          </Stack.Screen>
+        {device ? ( 
+          device.isApproved === false ? (
+            <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
+          ) : (
+            <Stack.Screen name="Home" component={HomeScreen} />
+          )
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />

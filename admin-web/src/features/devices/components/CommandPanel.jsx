@@ -37,8 +37,7 @@ export default function CommandPanel({ deviceId }) {
             {sending === cmd.type ? "Sending..." : cmd.label}
           </button>
         ))}
-      </div>
-      {message && <p className="text-sm text-blue-600 mt-3">{message}</p>}
+      </div> 
     </div>
   );
 }
