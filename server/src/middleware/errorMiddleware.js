@@ -6,7 +6,12 @@ export const notFound = (req, res, next) => {
 
 export const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  console.error(err.stack);
+  if (statusCode === 500) {
+    console.error(`🔥 Server Error: ${err.message}`);
+    console.error(err.stack);
+  } else {
+    console.warn(`⚠️ Client Error (${statusCode}): ${err.message}`);
+  }
   res.status(statusCode).json({
     message: err.message || "Server error",
     stack: process.env.NODE_ENV === "production" ? undefined : err.stack,

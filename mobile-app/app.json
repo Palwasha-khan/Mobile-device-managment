@@ -4,7 +4,7 @@
     "slug": "mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png", 
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -18,13 +18,18 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "package": "com.palwasha2209.mobileapp"
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [ 
+    "plugins": [
       [
         "expo-splash-screen",
         {
@@ -40,8 +45,14 @@
       "expo-secure-store",
       "expo-audio"
     ],
-    "experiments": { 
+    "experiments": {
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "64626696-6f9b-4ed5-b89a-42776c7fd9a1"
+      }
+    },
+    "owner": "palwasha2209"
   }
 }
