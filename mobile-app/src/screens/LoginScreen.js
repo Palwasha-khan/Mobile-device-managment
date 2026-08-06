@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -14,8 +15,9 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Employee Login</Text>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Employee Login</Text>
 
       <TextInput
         style={styles.input}
@@ -43,6 +45,7 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.link}>New employee? Register here</Text>
       </TouchableOpacity>
     </View>
+    </SafeAreaView>
   );
 }
 

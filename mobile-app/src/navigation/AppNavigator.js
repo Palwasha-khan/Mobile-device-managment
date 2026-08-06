@@ -6,18 +6,15 @@ import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import PendingApprovalScreen from "../screens/PendingApprovalScreen";
 import HomeScreen from "../screens/HomeScreen";
-
+import SettingsScreen from "../screens/SettingsScreen";
+import LoadingSpinner from "../components/LoadingSpinner";
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { device, checkingSession } = useAuth();
 
   if (checkingSession) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
-    );
+    return  <LoadingSpinner />;
   }
 
   return (
@@ -27,7 +24,10 @@ export default function AppNavigator() {
           device.isApproved === false ? (
             <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
           ) : (
+            <>
             <Stack.Screen name="Home" component={HomeScreen} />
+             <Stack.Screen name="Settings" component={SettingsScreen} />
+            </>
           )
         ) : (
           <>

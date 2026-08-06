@@ -1,7 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { UserCheck, ShieldCheck, Loader2 } from "lucide-react";
-import { promoteToAdmin } from "../../../api/endpoints/deviceApi";
+//import { promoteToAdmin } from "../../../api/endpoints/deviceApi";
 
 export default function PromoteToAdminButton({ deviceId, employeeName }) {
   const [loading, setLoading] = useState(false);

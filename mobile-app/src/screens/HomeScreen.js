@@ -1,97 +1,140 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { useState, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import { Camera } from "expo-camera";
 import { requestRecordingPermissionsAsync } from "expo-audio";
 import { useAuth } from "../context/AuthContext";
 import { sendPingRequest } from "../api/endpoints/deviceApi";
+import { startBackgroundLocationTracking, stopBackgroundLocationTracking } from "../tasks/backgroundLocationTask";
+import PrimaryButton from "../components/PrimaryButton";
+import StatusBadge from "../components/StatusBadge";
+import { colors, spacing, radius } from "../utils/theme";
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const { device, logout } = useAuth();
   const [sending, setSending] = useState(false);
   const [lastResult, setLastResult] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  useEffect(() => {
+    startBackgroundLocationTracking();
+  }, []);
 
   const handleSendPing = async () => {
     setSending(true);
-    setLastResult(null);
+    setErrorMessage(null);
     try {
-      // 1. Location permission + coordinates
       const { status: locationStatus } = await Location.requestForegroundPermissionsAsync();
       if (locationStatus !== "granted") {
-        Alert.alert("Permission needed", "Location permission is required to send a ping.");
+        setErrorMessage("Location permission is required to send a ping.");
         setSending(false);
         return;
       }
       const location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
 
-      // 2. Camera permission
       const cameraResult = await Camera.requestCameraPermissionsAsync();
-      const cameraPermission = cameraResult.status; // "granted" or "denied"
-
-      // 3. Microphone permission
       const micResult = await requestRecordingPermissionsAsync();
-      const microphonePermission = micResult.granted ? "granted" : "denied";
 
-      // 4. Send everything to the backend
-      const response = await sendPingRequest(latitude, longitude, cameraPermission, microphonePermission);
+      const response = await sendPingRequest(
+        latitude,
+        longitude,
+        cameraResult.status,
+        micResult.granted ? "granted" : "denied"
+      );
 
       setLastResult(response.data.device);
     } catch (err) {
-      const message = err.response?.data?.message || "Failed to send ping. Check your connection.";
-      Alert.alert("Error", message);
+      setErrorMessage(err.response?.data?.message || "Failed to send ping. Check your connection.");
     } finally {
       setSending(false);
     }
   };
 
+  const handleLogout = async () => {
+    await stopBackgroundLocationTracking();
+    await logout();
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Enrollment Status</Text>
-      <Text style={styles.info}>Employee: {device?.employeeName}</Text>
-      <Text style={styles.info}>Device ID: {device?.deviceId}</Text>
-      <Text style={styles.statusConnected}>● Connected to server</Text>
-
-      <TouchableOpacity style={styles.button} onPress={handleSendPing} disabled={sending}>
-        {sending ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send Test Location</Text>}
-      </TouchableOpacity>
-
-      {lastResult && (
-        <View style={styles.resultBox}>
-          <Text style={styles.resultTitle}>Last ping saved on server:</Text>
-          <Text>Lat: {lastResult.lastKnownLocation.lat}</Text>
-          <Text>Lng: {lastResult.lastKnownLocation.lng}</Text>
-          <Text>At: {new Date(lastResult.lastPingAt).toLocaleTimeString()}</Text>
-          <Text style={{ marginTop: 8, fontWeight: "600" }}>Camera: {lastResult.permissions?.camera}</Text>
-          <Text style={{ fontWeight: "600" }}>Microphone: {lastResult.permissions?.microphone}</Text>
-          <Text
-            style={{
-              marginTop: 8,
-              fontWeight: "bold",
-              color: lastResult.isCompliant ? "#16a34a" : "#dc2626",
-            }}
-          >
-            Status: {lastResult.isCompliant ? "Compliant" : "Non-Compliant"}
-          </Text>
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Welcome back</Text>
+            <Text style={styles.title}>{device?.employeeName}</Text>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.settingsButton}>
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
         </View>
-      )}
 
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.card}>
+          <Text style={styles.label}>Device ID</Text>
+          <Text style={styles.value}>{device?.deviceId}</Text>
+          <View style={styles.connectedRow}>
+            <View style={styles.dot} />
+            <Text style={styles.connectedText}>Connected to server</Text>
+          </View>
+        </View>
+
+        <PrimaryButton title="Send Test Location" onPress={handleSendPing} loading={sending} />
+
+        {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
+
+        {lastResult && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Last ping saved on server</Text>
+            <Text style={styles.value}>Lat: {lastResult.lastKnownLocation.lat}</Text>
+            <Text style={styles.value}>Lng: {lastResult.lastKnownLocation.lng}</Text>
+            <Text style={styles.value}>At: {new Date(lastResult.lastPingAt).toLocaleTimeString()}</Text>
+            <Text style={[styles.label, { marginTop: spacing.sm }]}>Camera: {lastResult.permissions?.camera}</Text>
+            <Text style={styles.label}>Microphone: {lastResult.permissions?.microphone}</Text>
+            <View style={{ marginTop: spacing.sm }}>
+              <StatusBadge isCompliant={lastResult.isCompliant} />
+            </View>
+          </View>
+        )}
+
+        <PrimaryButton title="Logout" onPress={handleLogout} variant="danger" />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, paddingTop: 60, backgroundColor: "#f4f6f8" },
-  title: { fontSize: 20, fontWeight: "bold", marginBottom: 16 },
-  info: { fontSize: 14, color: "#333", marginBottom: 4 },
-  statusConnected: { color: "green", marginBottom: 24, fontWeight: "600" },
-  button: { backgroundColor: "#2563eb", padding: 14, borderRadius: 8, alignItems: "center", marginBottom: 20 },
-  buttonText: { color: "#fff", fontWeight: "bold" },
-  resultBox: { backgroundColor: "#fff", padding: 16, borderRadius: 8, marginBottom: 20 },
-  resultTitle: { fontWeight: "bold", marginBottom: 6 },
-  logoutButton: { marginTop: "auto", alignItems: "center", padding: 12 },
-  logoutText: { color: "#999" },
+  safeArea: { flex: 1, backgroundColor: colors.background },
+  scrollContent: { padding: spacing.lg, paddingTop: spacing.md },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing.lg,
+  },
+  greeting: { fontSize: 13, color: colors.textSecondary, marginBottom: 2 },
+  title: { fontSize: 22, fontWeight: "700", color: colors.textPrimary },
+  settingsButton: {
+    padding: spacing.sm,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  settingsIcon: { fontSize: 18 },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardTitle: { fontWeight: "700", marginBottom: spacing.sm, color: colors.textPrimary },
+  label: { fontSize: 12, color: colors.textSecondary, marginTop: spacing.sm },
+  value: { fontSize: 15, color: colors.textPrimary, fontWeight: "600" },
+  connectedRow: { flexDirection: "row", alignItems: "center", marginTop: spacing.sm },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success, marginRight: 6 },
+  connectedText: { color: colors.success, fontWeight: "600", fontSize: 13 },
+  error: { color: colors.danger, marginBottom: spacing.md, textAlign: "center" },
 });

@@ -1,7 +1,9 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PendingApprovalScreen({ navigation }) {
   return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
     <View style={styles.container}>
       <Text style={styles.icon}>⏳</Text>
       <Text style={styles.title}>Registration Submitted</Text>
@@ -13,6 +15,7 @@ export default function PendingApprovalScreen({ navigation }) {
         <Text style={styles.buttonText}>Back to Login</Text>
       </TouchableOpacity>
     </View>
+    </SafeAreaView>
   );
 }
 

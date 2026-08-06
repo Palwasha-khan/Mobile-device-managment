@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RegisterScreen({ navigation }) {
   const [employeeName, setEmployeeName] = useState("");
@@ -17,6 +18,7 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
     <View style={styles.container}>
       <Text style={styles.title}>Employee Registration</Text>
 
@@ -41,7 +43,7 @@ export default function RegisterScreen({ navigation }) {
       <TouchableOpacity onPress={() => navigation.navigate("Login")}>
         <Text style={styles.link}>Already have an account? Login</Text>
       </TouchableOpacity>
-    </View>
+    </View></SafeAreaView>
   );
 }
 
