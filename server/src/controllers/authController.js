@@ -31,41 +31,37 @@ export const adminLogin = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Create a new admin user directly
-// @route   POST /api/admin/create-admin
+// @desc   Promote an employee (Device user) to Admin
+// @route   POST /api/admin/promote/:id
 // @access  Private (Admin only)
-export const createNewAdmin = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+export const promoteEmployeeToAdmin = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-  if (!name || !email || !password) {
-    res.status(400);
-    throw new Error('Please provide name, email, and password');
-  }
-
-  // Check if user already exists
-  const userExists = await User.findOne({ email });
+  const device = await Device.findById(id);
+    if (!device) {
+      res.status(404);
+      throw new Error("Device not found");
+    }
+ 
+  const userExists = await User.findOne({ email:device.email });
   if (userExists) {
     res.status(400);
-    throw new Error('User with this email already exists');
+    throw new Error('an admin account with this email already exists');
   }
-
-  // Hash password
-  const hashedPassword =  hashPassword(password);
-  // Create new user explicitly set to 'admin' role
-  const adminUser = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    role: 'admin',
-  });
+ const newAdmin = await User.create({
+      name: device.employeeName,
+      email: device.email,
+      password: device.password,  
+      role: "admin",
+    })
 
   res.status(201).json({
     message: 'New admin successfully created',
     admin: {
-      id: adminUser._id,
-      name: adminUser.name,
-      email: adminUser.email,
-      role: adminUser.role,
+      id: newAdmin._id,
+      name: newAdmin.name,
+      email: newAdmin.email,
+      role: newAdmin.role,
     },
   });
 });

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { UserCheck, ShieldCheck, Loader2 } from "lucide-react";
-//import { promoteToAdmin } from "../../../api/endpoints/deviceApi";
+import { promoteToAdmin } from "../../../api/endpoints/authApi";
 
 export default function PromoteToAdminButton({ deviceId, employeeName }) {
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(false); 
 
   const handlePromote = async () => {
     if (!confirm(`Promote ${employeeName} to Administrator? They will receive full access permissions.`)) return;

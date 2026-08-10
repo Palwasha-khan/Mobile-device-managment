@@ -7,8 +7,8 @@ export const logoutRequest = () => axiosClient.post("/auth/logout");
 
 export const refreshRequest = () => axiosClient.post("/auth/refresh-token");
 
-export const createAdmin = (name, email, password) =>
-  axiosClient.post("/auth/create-admin", { name, email, password });
+export const promoteToAdmin = (employeeId) =>
+  axiosClient.post(`/auth/promote/${employeeId}`);
 
 export const getMe = () => axiosClient.get("/auth/me");
 
