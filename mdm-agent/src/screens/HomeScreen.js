@@ -6,20 +6,47 @@ import { Camera } from "expo-camera";
 import { requestRecordingPermissionsAsync } from "expo-audio";
 import { useAuth } from "../context/AuthContext";
 import { sendPingRequest } from "../api/endpoints/deviceApi";
-import { startBackgroundLocationTracking, stopBackgroundLocationTracking } from "../tasks/backgroundLocationTask";
+import { startBackgroundLocationTracking, stopBackgroundLocationTracking ,checkBackgroundLocationGranted} from "../tasks/backgroundLocationTask";
 import PrimaryButton from "../components/PrimaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { colors, spacing, radius } from "../utils/theme";
+import BackgroundPermissionScreen from "./BackgroundPermissionScreen";
+
+import * as Notifications from "expo-notifications";
+ 
+
 
 export default function HomeScreen({ navigation }) {
+
+
+
   const { device, logout } = useAuth();
   const [sending, setSending] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [needsBackgroundPermission, setNeedsBackgroundPermission] = useState(false);
+
 
   useEffect(() => {
-    startBackgroundLocationTracking();
-  }, []);
+  const initTracking = async () => {
+    try { 
+       const { status: notifStatus } = await Notifications.requestPermissionsAsync();
+console.log("Notification permission status:", notifStatus);
+      const hasBackground = await checkBackgroundLocationGranted();
+      console.log("Background permission already granted?", hasBackground);
+      if (!hasBackground) {
+        setNeedsBackgroundPermission(true);
+      } else {
+        startBackgroundLocationTracking();
+      }
+    } catch (err) {
+      console.log("Error checking background permission:", err.message);
+    }
+  };
+  initTracking();
+}, []);
+
+  
 
   const handleSendPing = async () => {
     setSending(true);
@@ -52,12 +79,31 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+ const handleContinueAfterSettings = async () => {
+  try {
+    const hasBackground = await checkBackgroundLocationGranted();
+    console.log("Recheck after settings - hasBackground:", hasBackground);
+    setNeedsBackgroundPermission(false);
+    if (hasBackground) {
+      await startBackgroundLocationTracking();
+    }
+  } catch (err) {
+    console.log("handleContinueAfterSettings error:", err.message);
+    setNeedsBackgroundPermission(false);
+  }
+};
+
   const handleLogout = async () => {
     await stopBackgroundLocationTracking();
     await logout();
   };
-
+ 
+  if (needsBackgroundPermission) {
+  return <BackgroundPermissionScreen onContinue={handleContinueAfterSettings} />;
+}
   return (
+
+   
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
