@@ -10,6 +10,7 @@ import {
   updateDevice,
   getDeviceStats,
   getPendingCount,
+  updatePushToken,
 } from "../controllers/deviceController.js";
 import { protect, requireRole } from "../middleware/authMiddleware.js";
 import {
@@ -33,6 +34,8 @@ router.post("/ping", protect, requireRole("employee"), pingRules, sendPing);
 router.get("/", protect, requireRole("admin"), getAllDevices);
 router.get("/:id/history", protect, requireRole("admin"), getDeviceHistory);
 router.get("/stats", protect, requireRole("admin"), getDeviceStats);
+router.patch("/push-token", protect, requireRole("employee"), updatePushToken);
+
 router.post(
   "/:id/command",
   protect,

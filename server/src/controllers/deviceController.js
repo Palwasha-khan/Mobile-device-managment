@@ -5,7 +5,8 @@ import Command from "../models/Command.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import { approvalEmailTemplate, rejectionEmailTemplate } from "../utils/emailTemplates.js";
-
+import { Expo } from "expo-server-sdk";
+const expo = new Expo();
 
 // ---------- Admin approval workflow ---------
 
@@ -284,9 +285,42 @@ export const sendCommand = asyncHandler(async (req, res) => {
       commandType,
       issuedAt: command.createdAt,
     });
+    
+    if (device.pushToken && Expo.isExpoPushToken(device.pushToken)) {
+  const commandLabels = {
+    ring_alert: "Device Alert",
+    lock_warning: "Security Warning",
+    compliance_warning: "Compliance Warning",
+  };
+
+  await expo.sendPushNotificationsAsync([
+    {
+      to: device.pushToken,
+      sound: "default",
+      title: commandLabels[commandType] || "Admin Command",
+      body: "Tap to open the app and see details.",
+      data: { commandType },
+    },
+  ]);
+}
   }
 
   res.status(200).json({ message: "Command sent", command });
+});
+
+// @route   POST /api/device/push-token
+// @access  Private (admin)
+export const updatePushToken = asyncHandler(async (req, res) => {
+  const { pushToken } = req.body;
+
+  const device = await Device.findByIdAndUpdate(req.auth.id, { pushToken }, { new: true });
+
+  if (!device) {
+    res.status(404);
+    throw new Error("Device not found");
+  }
+
+  res.status(200).json({ message: "Push token saved" });
 });
 
 // ---------- Admin edit ----------

@@ -11,7 +11,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { colors, spacing, radius } from "../utils/theme";
 import BackgroundPermissionScreen from "./BackgroundPermissionScreen";
-
+import { registerForPushNotifications } from "../utils/registerPushToken";
 import * as Notifications from "expo-notifications";
  
 
@@ -27,11 +27,11 @@ export default function HomeScreen({ navigation }) {
   const [needsBackgroundPermission, setNeedsBackgroundPermission] = useState(false);
 
 
-  useEffect(() => {
+ useEffect(() => {
   const initTracking = async () => {
-    try { 
-       const { status: notifStatus } = await Notifications.requestPermissionsAsync();
-console.log("Notification permission status:", notifStatus);
+    try {
+      await registerForPushNotifications(); // replaces the standalone permission request
+
       const hasBackground = await checkBackgroundLocationGranted();
       console.log("Background permission already granted?", hasBackground);
       if (!hasBackground) {

@@ -58,9 +58,13 @@ const deviceSchema = new mongoose.Schema(
       default: false,
     },
     refreshTokenHash: {
-  type: String,
-  default: null,
-},
+      type: String,
+      default: null,
+    },
+    pushToken: {
+    type: String,
+    default: null,
+  },
   },
   { timestamps: true }
 );
