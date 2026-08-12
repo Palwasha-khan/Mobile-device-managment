@@ -30,7 +30,8 @@
         "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION"
-      ]
+      ],
+      "package": "com.palwasha2209.mobileagent"
     },
     "web": {
       "favicon": "./assets/favicon.png"
