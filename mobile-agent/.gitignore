@@ -42,3 +42,4 @@ yarn-error.*
 /ios
 /android
 package-lock.json
+google-services.json

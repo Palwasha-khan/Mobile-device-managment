@@ -1,6 +1,7 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import MarkerClusterGroup from 'react-leaflet-cluster';
 
 const defaultIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -56,6 +57,26 @@ export default function DeviceMap({ devices }) {
   const withLocation = devices.filter((d) => d.lastKnownLocation?.lat);
   const spreadDevices = spreadOverlappingMarkers(withLocation);
 
+  // Active Location Icon (Green)
+const activeIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+// Inactive / Last Seen Icon (Grey)
+const inactiveIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
   return (
     <div className="h-125 w-full rounded-lg overflow-hidden border border-slate-200">
       <MapContainer center={PAKISTAN_CENTER} zoom={PAKISTAN_DEFAULT_ZOOM} style={{ height: "100%", width: "100%" }}>
@@ -63,15 +84,34 @@ export default function DeviceMap({ devices }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; OpenStreetMap contributors'
         />
-        {spreadDevices.map((device) => (
-          <Marker key={device._id} position={[device.displayLat, device.displayLng]} icon={defaultIcon}>
+        <MarkerClusterGroup chunkedLoading>
+   
+        {spreadDevices.map((device) =>{
+          const isLocationActive = Boolean(
+            device.lastPingAt && (new Date() - new Date(device.lastPingAt)) < 5 * 60 * 1000
+          );
+        return (
+          <Marker key={device._id} position={[device.displayLat, device.displayLng]} icon={isLocationActive ? activeIcon : inactiveIcon}>
             <Popup>
-              <strong>{device.employeeName}</strong><br />
-              {device.isCompliant ? "Compliant" : "Non-Compliant"}<br />
-              Last ping: {device.lastPingAt ? new Date(device.lastPingAt).toLocaleTimeString() : "N/A"}
-            </Popup>
+        <strong>{device.employeeName}</strong><br />
+        
+        {/* Status Badge */}
+        <span style={{ color: isLocationActive ? "green" : "gray", fontWeight: "bold" }}>
+          ● {isLocationActive ? "Live / Active Location" : "Inactive (Last Known Location)"}
+        </span>
+        <br />
+        
+        {/* Compliance */}
+        <span>{device.isCompliant ? "Compliant" : "Non-Compliant"}</span><br />
+        
+        {/* Last Seen Timestamp */}
+        <small style={{ color: "#666" }}>
+          Last seen: {device.lastPingAt ? new Date(device.lastPingAt).toLocaleString() : "N/A"}
+        </small>
+      </Popup>
           </Marker>
-        ))}
+       ) })}
+       </MarkerClusterGroup>
       </MapContainer>
     </div>
   );
