@@ -11,6 +11,9 @@ import {
   getDeviceStats,
   getPendingCount,
   updatePushToken,
+  getMyCommands,
+  clearOneCommand,
+  clearMyCommands,
 } from "../controllers/deviceController.js";
 import { protect, requireRole } from "../middleware/authMiddleware.js";
 import {
@@ -34,15 +37,6 @@ router.post("/ping", protect, requireRole("employee"), pingRules, sendPing);
 router.get("/", protect, requireRole("admin"), getAllDevices);
 router.get("/:id/history", protect, requireRole("admin"), getDeviceHistory);
 router.get("/stats", protect, requireRole("admin"), getDeviceStats);
-router.patch("/push-token", protect, requireRole("employee"), updatePushToken);
-
-router.post(
-  "/:id/command",
-  protect,
-  requireRole("admin"),
-  commandRules,
-  sendCommand
-);
 router.put(
   "/:id",
   protect,
@@ -50,5 +44,21 @@ router.put(
   updateDeviceRules,
   updateDevice
 );
+router.post(
+  "/:id/command",
+  protect,
+  requireRole("admin"),
+  commandRules,
+  sendCommand
+);
+
+
+
+//command management
+router.patch("/push-token", protect, requireRole("employee"), updatePushToken);
+router.get("/my-commands", protect, requireRole("employee"), getMyCommands);
+router.patch("/my-commands/clear-all", protect, requireRole("employee"), clearMyCommands);
+router.delete("/my-commands/:commandId", protect, requireRole("employee"), clearOneCommand);
+
 
 export default router;

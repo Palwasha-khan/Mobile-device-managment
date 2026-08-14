@@ -22,6 +22,10 @@ const commandSchema = new mongoose.Schema(
       enum: ["sent", "delivered"],
       default: "sent",
     },
+    clearedByEmployee: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

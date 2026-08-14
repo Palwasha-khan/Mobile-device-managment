@@ -43,3 +43,21 @@ export const registerForPushNotifications = async () => {
     console.log("Failed to save push token:", err.response?.data || err.message);
   }
 };
+
+export const setupNotificationResponseListener = (navigationRef) => {
+  // Handles taps while the app is running (foreground/background, not killed)
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    navigationRef.current?.navigate("Notifications");
+  });
+
+  return () => subscription.remove();
+};
+
+// Handles the case where the app was FULLY CLOSED and got opened
+// specifically by tapping a notification
+export const checkLastNotificationResponse = async (navigationRef) => {
+  const response = await Notifications.getLastNotificationResponseAsync();
+  if (response) {
+    navigationRef.current?.navigate("Notifications");
+  }
+};

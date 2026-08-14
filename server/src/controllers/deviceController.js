@@ -308,6 +308,52 @@ export const sendCommand = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Command sent", command });
 });
 
+// @route   GET /api/device/my-commands
+// @desc    Returns the logged-in employee's own command history
+// @access  Private (employee)
+export const getMyCommands = asyncHandler(async (req, res) => {
+  const commands = await Command.find({
+    device: req.auth.id,
+    clearedByEmployee: { $ne: true },
+  })
+    .sort({ createdAt: -1 })
+    .limit(50);
+
+  res.status(200).json({ commands });
+});
+
+// @route   PATCH /api/device/my-commands/clear-all
+// @desc    Employee clears their own notification list (doesn't delete
+//          the underlying record - admin's audit trail stays intact)
+// @access  Private (employee)
+export const clearMyCommands = asyncHandler(async (req, res) => {
+  await Command.updateMany(
+    { device: req.auth.id },
+    { clearedByEmployee: true }
+  );
+
+  res.status(200).json({ message: "Notifications cleared" });
+});
+
+// @route   DELETE /api/device/my-commands/:commandId
+// @desc    Employee clears a single notification
+// @access  Private (employee)
+export const clearOneCommand = asyncHandler(async (req, res) => {
+  const command = await Command.findOne({
+    _id: req.params.commandId,
+    device: req.auth.id, 
+  });
+
+  if (!command) {
+    res.status(404);
+    throw new Error("Notification not found");
+  }
+
+  command.clearedByEmployee = true;
+  await command.save();
+
+  res.status(200).json({ message: "Notification cleared" });
+});
 // @route   POST /api/device/push-token
 // @access  Private (admin)
 export const updatePushToken = asyncHandler(async (req, res) => {

@@ -111,9 +111,14 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.greeting}>Welcome back</Text>
             <Text style={styles.title}>{device?.employeeName}</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.settingsButton}>
-            <Text style={styles.settingsIcon}>⚙️</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <TouchableOpacity onPress={() => navigation.navigate("Notifications")} style={styles.settingsButton}>
+              <Text style={styles.settingsIcon}>🔔</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.settingsButton}>
+              <Text style={styles.settingsIcon}>⚙️</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.card}>

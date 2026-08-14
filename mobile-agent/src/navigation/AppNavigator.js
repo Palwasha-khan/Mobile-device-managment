@@ -8,17 +8,28 @@ import PendingApprovalScreen from "../screens/PendingApprovalScreen";
 import HomeScreen from "../screens/HomeScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import LoadingSpinner from "../components/LoadingSpinner";
+import NotificationsScreen from "../screens/NotificationsScreen";
+import { setupNotificationResponseListener, checkLastNotificationResponse } from "../utils/registerPushToken";
+import { useEffect, useRef } from "react";
+
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { device, checkingSession } = useAuth();
+  const navigationRef = useRef(null);
+
+  useEffect(() => {
+    const unsubscribe = setupNotificationResponseListener(navigationRef);
+    checkLastNotificationResponse(navigationRef);
+    return unsubscribe;
+  }, []);
 
   if (checkingSession) {
     return  <LoadingSpinner />;
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer  ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {device ? ( 
           device.isApproved === false ? (
@@ -27,6 +38,7 @@ export default function AppNavigator() {
             <>
             <Stack.Screen name="Home" component={HomeScreen} />
              <Stack.Screen name="Settings" component={SettingsScreen} />
+             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             </>
           )
         ) : (
