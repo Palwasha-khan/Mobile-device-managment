@@ -1,178 +1,126 @@
- 
-Phase	Status
-1. Secrets/env locked down	✅ Done
-2. CORS + rate limiting	✅ Done (restricted CORS, authLimiter on login/register)
-3. Input validation	✅ Done (express-validator on all auth routes)
-4. Centralized error handling	✅ Done (asyncHandler + errorMiddleware)
-5. Database efficiency (indexes, pagination, lean queries)	✅ Done
-6.postman testing ✅ Done
-7. Basic logging	✅ Done (morgan)
-8. Deploy to a live URL	❌ Not done
+# MDM System — Mobile Device Management Platform
 
- 
-admin-web/
-├── .env                          # VITE_API_URL=http://localhost:5000/api
-├── .gitignore
-├── package.json
-│
-└── src/
-    ├── main.jsx
-    ├── App.jsx
-    ├── index.css
-    │
-    ├── api/
-    │   ├── axiosClient.js         # Phase 1 - the refresh-interceptor axios instance
-    │   ├── socket.js               # Phase 7
-    │   └── endpoints/
-    │       ├── authApi.js          # login, logout, refresh
-    │       └── deviceApi.js        # getDevices, getDeviceHistory, approve, reject, sendCommand, updateDevice, promoteToAdmin
-    │
-    ├── context/
-    │   ├── AuthContext.jsx         # Phase 2
-    │   └── SocketContext.jsx       # Phase 7
-    │
-    ├── hooks/
-    │   ├── useDevices.js           # React Query wrapper around deviceApi
-    │   ├── useDeviceHistory.js
-    │   ├── usePendingDevices.js
-    │   └── useSocketEvent.js
-    │
-    ├── routes/
-    │   ├── AppRoutes.jsx
-    │   └── ProtectedRoute.jsx      # Phase 2
-    │
-    ├── layouts/
-    │   ├── DashboardLayout.jsx     # Phase 3
-    │   └── AuthLayout.jsx
-    │
-    ├── components/
-    │   ├── ui/
-    │   │   ├── Button.jsx
-    │   │   ├── Badge.jsx
-    │   │   ├── Card.jsx
-    │   │   ├── Table.jsx
-    │   │   ├── Input.jsx
-    │   │   ├── Spinner.jsx
-    │   │   └── Skeleton.jsx        # Phase 8
-    │   ├── layout/
-    │   │   ├── Sidebar.jsx         # Phase 3
-    │   │   └── Topbar.jsx          # Phase 3
-    │   └── shared/
-    │       ├── ComplianceBadge.jsx
-    │       ├── ConfirmDialog.jsx
-    │       ├── EmptyState.jsx      # Phase 8
-    │       └── ErrorBoundary.jsx
-    │
-    ├── features/
-    │   ├── auth/
-    │   │   └── LoginPage.jsx       # Phase 2
-    │   │
-    │   ├── dashboard/
-    │   │   ├── DashboardPage.jsx   # Phase 4
-    │   │   └── components/
-    │   │       ├── SummaryCards.jsx
-    │   │       └── ComplianceChart.jsx
-    │   │
-    │   ├── devices/
-    │   │   ├── DevicesListPage.jsx      # Phase 5
-    │   │   ├── DeviceDetailPage.jsx     # Phase 5
-    │   │   └── components/
-    │   │       ├── DeviceTable.jsx
-    │   │       ├── DeviceFilters.jsx
-    │   │       ├── LocationHistoryTab.jsx
-    │   │       ├── PermissionHistoryTab.jsx
-    │   │       ├── EditDeviceForm.jsx
-    │   │       ├── CommandPanel.jsx
-    │   │       └── PromoteToAdminButton.jsx
-    │   │
-    │   ├── pendingApprovals/
-    │   │   ├── PendingApprovalsPage.jsx # Phase 6
-    │   │   └── components/
-    │   │       └── PendingRow.jsx
-    │   │
-    │   ├── map/
-    │   │   ├── LiveMapPage.jsx     # Phase 7
-    │   │   └── components/
-    │   │       └── DeviceMap.jsx
-    │   │
-    │   └── settings/
-    │       ├── SettingsPage.jsx
-    │       └── components/
-    │           └── ChangePasswordForm.jsx
-    │
-    └── utils/
-        ├── formatDate.js
-        └── constants.js            # command types, colors, etc.
+A full-stack Mobile Device Management (MDM) system built solo, end to end — a lightweight version of what tools like Microsoft Intune or Jamf provide. It gives IT admins real-time visibility into company-used phones: live location tracking, compliance monitoring (camera/microphone/GPS permission state), and the ability to send remote commands to a specific device.
 
+Built to solve a real gap: most MDM tools are expensive, enterprise-only, and overkill for small-to-mid companies that just need basic compliance visibility over employee-used phones.
 
-Full Revision — Everything Built So Far
-Backend (server/)
+## 🎥 Demo
 
-Auth
+*(Add your demo video link or embedded GIF here)*
 
-Admin login (POST /api/auth/login) — email/password, returns access + refresh token
-Employee login (POST /api/auth/employee-login) — same pattern, blocked unless status: "approved"
-Employee self-registration (POST /api/auth/employee-register) — starts as status: "pending"
-Refresh token endpoint (POST /api/auth/refresh-token) — accepts token via cookie (web) or request body (mobile), rotates on use
-Logout (POST /api/auth/logout) — revokes the stored refresh token hash, so it can't be reused
-GET /api/auth/me — returns current logged-in account's info, used to restore session on page reload
-POST /api/auth/change-password
-Custom createNewAdmin route — protected, admin-only, creates a new admin directly
+## 🏗️ Architecture
 
-Security hardening
+Three separate applications, one backend:
 
-Access tokens (15 min) + refresh tokens (30 days), separate secrets
-Passwords hashed with Node's crypto.scrypt (salted, slow — done in controllers, not model hooks)
-Rate limiting on login/register routes
-Input validation (express-validator) on auth routes
-Centralized error handling (asyncHandler + errorMiddleware)
-Restricted CORS (credentials: true, specific origin)
-helmet, morgan logging
+```
+┌─────────────────────┐         ┌─────────────────────┐
+│   Admin Web (React)  │◄──────► │                     │
+│   Live map, device    │         │  Backend API         │
+│   management, commands│         │  (Node/Express/     │
+└─────────────────────┘         │   MongoDB/Socket.io) │
+                                  │                     │
+┌─────────────────────┐         │                     │
+│  Mobile App           │◄──────► │                     │
+│  (React Native/Expo)  │         └─────────────────────┘
+│  Employee telemetry    │
+│  agent                │
+└─────────────────────┘
+```
 
-Device/employee management
+## ✨ Core Features
 
-GET /api/device/pending — list pending registrations
-PATCH /api/device/:id/approve / reject — with email notifications (nodemailer)
-GET /api/device — paginated, searchable (name/email), filterable (compliance), approved-only by default
-GET /api/device/:id/history — location + permission history
-PUT /api/device/:id — admin edits employee details
-PATCH /api/device/:id/make-admin — promote employee to admin
+### Backend
+- **Access + refresh token authentication** — short-lived access tokens (15 min) with rotating, revocable refresh tokens (not a single long-lived JWT). Refresh tokens delivered via httpOnly cookie for web, request body for mobile.
+- **Employee approval workflow** — employees self-register, but cannot log in until an admin approves them. Automated email notifications on approve/reject.
+- **Compliance engine** — computed server-side on every GPS ping: a device is compliant only if camera access, microphone access, and GPS are all active. Every permission *change* (not every ping) is logged for a full audit history.
+- **Real-time architecture** — Socket.io broadcasts live device updates to the admin dashboard, and delivers room-based targeted remote commands to a specific device.
+- **Push notifications** — Firebase Cloud Messaging integration via `expo-server-sdk`, so admin commands reach a device even when the app is fully closed.
+- **Security hardening** — rate limiting on auth routes, input validation (`express-validator`), centralized error handling, salted password hashing (`scrypt`), restricted CORS, database indexing and pagination for scale.
 
-Core MDM functionality
+### Admin Web Dashboard (React + Tailwind)
+- Live fleet overview with real-time summary cards and a compliance breakdown chart
+- Searchable, paginated, filterable device management table
+- Live map (Leaflet) with marker clustering, active/inactive visual states, and real-time pin updates
+- Device detail view: full location + permission history (with direct Google Maps links), remote command panel, inline editing
+- Pending approvals queue
+- Persistent Socket.io connection (survives navigation, doesn't reconnect on every page change)
+- Automatic access-token-refresh interceptor with request queuing
 
-POST /api/device/ping — GPS + camera/mic permission ingestion
-Compliance engine — isCompliant = camera granted AND mic granted AND GPS active, computed on every ping
-LocationLog + PermissionLog — full history tracking, changes-only logging for permissions
-GET /api/device/stats — dashboard summary counts (approved-only)
-Socket.io — live device-update broadcasts, room-based targeting per device
-POST /api/device/:id/command — ring alert / lock warning / compliance warning, delivered via socket room
-Database indexes (isCompliant, status) + .lean() on read-only queries
-Admin-web (admin-web/)
-Axios client with automatic access-token-refresh interceptor (queues parallel requests during refresh)
-AuthContext — login, logout, session restore via /auth/me
-SocketContext — one persistent connection for the whole admin session, survives navigation
-Dashboard — summary cards + compliance pie chart, auto-refreshing
-Devices list — search, compliance filter, pagination, Clear Filters
-Device detail — location/permission history tabs, edit form, command panel, promote-to-admin
-Pending Approvals page — approve/reject with live list updates
-Live Map — Leaflet, defaults to Pakistan view, real-time pin updates via socket
-Settings page — profile view, change password
-Tailwind throughout, toast notifications, skeleton loading states, empty states
+### Mobile App (React Native / Expo — custom EAS development build)
+- Employee login, registration, and pending-approval states
+- Background location tracking (`expo-task-manager` + `expo-location`), including the full Android "Allow all the time" permission UX flow
+- Camera/microphone permission monitoring feeding the same compliance engine
+- Real-time command listener (Socket.io) — vibration + in-app alert while open
+- Push notifications for commands when the app is closed
+- In-app notification history screen with clear/dismiss functionality
+- Built with a custom EAS development build — not Expo Go — since background location and push notifications require native modules Expo Go doesn't support
 
-That's a genuinely complete, working MDM admin system. Solid foundation.
+## 🛠️ Tech Stack
 
-Now: Mobile App (Employee Device Agent) — from scratch
-Phase plan
- 
-4
-Phase 4: Background ping task
-Move from manual button-press pings to a real background task using expo-location's background location API, so pings happen automatically on an interval even when the app isn't in the foreground (within Expo Go's real limitations, which we'll work within honestly).
-5
-Phase 5: Socket.io command listener
-Connect to Socket.io on login, register the device into its room, and react to incoming commands (ring_alert, lock_warning, compliance_warning) with vibration + alert - same pattern as before, but built cleanly from scratch this time with the persistent-connection fix already applied from day one instead of retrofitted.
-6
-Phase 6: Polish + visual design
-Visual pass with a consistent design system (matching admin-web's Tailwind-inspired palette, even though React Native doesn't use Tailwind directly - NativeWind is an option if you want actual Tailwind classes in RN), proper loading/error states, and a settings/logout screen.
-7
-Phase 7: EAS Build - real installable APK
-Build a real installable APK via EAS Build (not just Expo Go), so the app can actually be demoed/installed without needing the Expo Go app - important for your portfolio demo video plan.y
+**Backend:** Node.js, Express, MongoDB, Mongoose, Socket.io, JWT, bcrypt/scrypt, Nodemailer, expo-server-sdk
+
+**Admin Web:** React, Vite, Tailwind CSS, React Query, React Router, Leaflet, Socket.io-client, Axios
+
+**Mobile:** React Native, Expo, EAS Build, React Navigation, expo-location, expo-task-manager, expo-notifications, expo-secure-store, Socket.io-client
+
+## 📁 Project Structure
+
+```
+mdm-system/
+├── server/          # Node.js/Express/MongoDB backend
+├── admin-web/       # React admin dashboard
+└── mobile-app/      # React Native employee agent
+```
+
+## 🚀 Getting Started
+
+### Backend
+```bash
+cd server
+npm install
+cp .env.example .env   # fill in your MongoDB URI, JWT secrets, email credentials
+node src/seedAdmin.js  # creates your first admin account
+npm run dev
+```
+
+### Admin Web
+```bash
+cd admin-web
+npm install
+npm run dev
+```
+
+### Mobile App
+```bash
+cd mobile-app
+npm install
+npx eas-cli login
+eas build --profile development --platform android
+# install the resulting APK, then:
+npx expo start --dev-client
+```
+
+> **Note:** the mobile app requires a custom EAS development build, not Expo Go, since background location and push notifications depend on native modules that Expo Go doesn't include.
+
+## 🧠 Engineering Notes & Challenges
+
+A few of the harder problems solved along the way:
+
+- **Cross-platform npm lockfile bug** — `package-lock.json` generated on Windows doesn't reliably capture Linux-specific optional dependency versions needed by EAS's Linux build servers, causing native/JS class mismatches. Solved by excluding the lock file from version control and letting EAS resolve dependencies fresh on its own build servers.
+- **Socket.io connection stability** — early versions disconnected/reconnected on every component re-render or page navigation. Fixed by moving connection lifecycle into persistent Context providers (both web and mobile) tied to auth state, not component mount/unmount.
+- **Android background execution limits** — background location tasks are subject to Doze mode and manufacturer-specific battery restrictions. Implemented an explicit permission-guidance flow (deep-linking to system Settings) since Android requires manual "Allow all the time" selection rather than a simple in-app dialog on modern versions.
+
+## 📌 Roadmap / Known Limitations
+
+- Not yet deployed to a public URL (currently runs locally / via local network for development and demo purposes)
+- Automated test coverage is limited — testing was primarily manual via Postman during development; unit tests for the compliance engine and auth flow are a planned addition
+- iOS has not yet been built/tested — development so far has focused on Android
+
+## 📄 License
+
+MIT
+
+## 👤 Author
+
+Palwasha Khan
+[LinkedIn] ·   · [Email:palwashakhan.2201@mail.com]

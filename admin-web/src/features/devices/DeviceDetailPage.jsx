@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom"; 
 import { useDeviceHistory } from "../../hooks/useDeviceHistory";
 import ComplianceBadge from "../../components/shared/ComplianceBadge";
 import LocationHistoryTab from "./components/LocationHistoryTab";
@@ -13,6 +13,7 @@ export default function DeviceDetailPage() {
   const { id } = useParams();
   const [tab, setTab] = useState("location");
   const { data, isLoading, isError } = useDeviceHistory(id);
+   
 
   if (isLoading) {
     return (

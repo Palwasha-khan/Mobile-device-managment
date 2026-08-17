@@ -13,7 +13,7 @@ export default function DevicesListPage() {
   const search = searchParams.get("search") || "";
   const compliance = searchParams.get("compliance") || "";
 
-  const { data, isLoading, isError } = useDevices({ page, search, compliance });
+  const { data, isLoading, isError } = useDevices({ page, limit: 10, search, compliance });
 
   const updateFilters = (newParams) => {
     const params = new URLSearchParams(searchParams);

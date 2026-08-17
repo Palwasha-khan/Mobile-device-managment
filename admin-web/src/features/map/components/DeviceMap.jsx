@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 
 const PAKISTAN_CENTER = [30.3753, 69.3451];
 const PAKISTAN_DEFAULT_ZOOM = 6;
-const ACTIVE_THRESHOLD_MS = 15 * 60 * 1000;
+const ACTIVE_THRESHOLD_MS =  15 * 1000;
 
 const activeIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -16,9 +16,7 @@ const activeIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
-
-// Tailwind's filter utilities applied directly as the marker's className -
-// Leaflet just puts this class on the <img> it renders internally
+ 
 const inactiveIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -35,24 +33,50 @@ const isDeviceActive = (device) => {
   return Date.now() - new Date(device.lastPingAt).getTime() < ACTIVE_THRESHOLD_MS;
 };
 
-// Builds a cluster badge using Tailwind utility classes directly in the
-// HTML string - Tailwind's compiler scans this file's text and includes
-// these classes in the build, same as if they were in JSX
 const createClusterIcon = (cluster) => {
   const count = cluster.getChildCount();
 
-  const bgClass =
-    count >= 10 ? "bg-red-600" : count >= 5 ? "bg-amber-600" : "bg-blue-600";
+  // Dynamic color depending on cluster size
+  const pinColor = count >= 10 ? "#dc2626" : count >= 5 ? "#d97706" : "#2563eb";
 
   return L.divIcon({
-    html: `<div class="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-sm border-[3px] border-white shadow-lg ${bgClass}">${count}</div>`,
-    className: "", // prevents Leaflet's own default cluster styling from applying
-    iconSize: L.point(20, 20, true),
+    html: `
+      <div class="w-8 h-10 drop-shadow-md">
+        <svg viewBox="0 0 24 32" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <!-- Pin Body -->
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20c0-6.63-5.37-12-12-12z" fill="${pinColor}"/>
+          
+          <!-- Inner White Circle -->
+          <circle cx="12" cy="11" r="7" fill="#ffffff"/>
+          
+          <!-- Cluster Count Text (Embedded inside SVG) -->
+          <text 
+            x="12" 
+            y="11" 
+            text-anchor="middle" 
+            dominant-baseline="central" 
+            fill="#1e293b" 
+            font-size="9.5" 
+            font-weight="bold" 
+            font-family="sans-serif"
+          >
+            ${count}
+          </text>
+        </svg>
+      </div>
+    `,
+    className: "", // Prevents Leaflet default styles
+    iconSize: [32, 40],
+    iconAnchor: [16, 40], // Anchors the bottom tip of the pin to the map position
   });
 };
 
 export default function DeviceMap({ devices }) {
   const withLocation = devices.filter((d) => d.lastKnownLocation?.lat);
+
+  const clusterKey = withLocation
+    .map((d) => `${d._id}-${d.lastKnownLocation.lat}-${d.lastKnownLocation.lng}-${d.lastPingAt}`)
+    .join("|");
 
   return (
     <div className="h-125 w-full rounded-lg overflow-hidden border border-slate-200 relative">
@@ -69,11 +93,12 @@ export default function DeviceMap({ devices }) {
 
       <MapContainer center={PAKISTAN_CENTER} zoom={PAKISTAN_DEFAULT_ZOOM} style={{ height: "100%", width: "100%" }}>
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
-        />
+  url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+/>
 
         <MarkerClusterGroup
+         key={clusterKey}
           chunkedLoading
           iconCreateFunction={createClusterIcon}
           maxClusterRadius={30}

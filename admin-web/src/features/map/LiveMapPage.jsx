@@ -6,32 +6,77 @@ import DeviceMap from "./components/DeviceMap";
 import { MapPin, Radio } from "lucide-react";
 
 export default function LiveMapPage() {
-  const { data, isLoading, isError } = useDevices({ page: 1, search: "", compliance: "" });
+  const { data, isLoading, isError } = useDevices({ page: 1,limit:50, search: "", compliance: "" });
   const socket = useSocket();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!socket) return;
+  if (!socket) return;
 
-    const handleUpdate = (updatedDevice) => {
-      // Direct React Query cache update without needing duplicate local state
-      queryClient.setQueryData(["devices", { page: 1, search: "", compliance: "" }], (oldData) => {
-        if (!oldData?.devices) return oldData;
+  const handleUpdate = (updatedDevice) => {
+    console.log("🔥 Updating React Query cache for:", updatedDevice.deviceId);
 
-        const exists = oldData.devices.some((d) => d._id === updatedDevice._id);
-        const updatedDevices = exists
-          ? oldData.devices.map((d) => (d._id === updatedDevice._id ? { ...d, ...updatedDevice } : d))
-          : [...oldData.devices, updatedDevice];
+    // Update ANY query in the cache that starts with "devices"
+    queryClient.setQueriesData({ queryKey: ["devices"] }, (oldData) => {
+      if (!oldData) return oldData;
 
-        return { ...oldData, devices: updatedDevices };
-      });
+      // Normalize array structure: handle both `{ devices: [...] }` and raw `[...]`
+      let deviceList = [];
+      if (Array.isArray(oldData)) {
+        deviceList = oldData;
+      } else if (Array.isArray(oldData.devices)) {
+        deviceList = oldData.devices;
+      } else {
+        return oldData; // Unexpected shape, skip
+      }
 
-      queryClient.invalidateQueries(["deviceStats"]);
-    };
+      // Flexibly match using String conversion of _id OR deviceId
+      const targetId = String(updatedDevice._id || updatedDevice.id);
+      const targetDevId = String(updatedDevice.deviceId);
 
-    socket.on("device-update", handleUpdate);
-    return () => socket.off("device-update", handleUpdate);
-  }, [socket, queryClient]);
+      const exists = deviceList.some(
+        (d) => String(d._id) === targetId || String(d.deviceId) === targetDevId
+      );
+
+      let updatedList;
+      if (exists) {
+        // Merge the incoming socket properties into the existing device object
+        updatedList = deviceList.map((d) => {
+          if (String(d._id) === targetId || String(d.deviceId) === targetDevId) {
+            return {
+              ...d,
+              ...updatedDevice,
+              // Ensure location is properly overwritten
+              lastKnownLocation: {
+                ...d.lastKnownLocation,
+                ...updatedDevice.lastKnownLocation,
+              },
+            };
+          }
+          return d;
+        });
+      } else {
+        // If it's a brand new device, append it to the list
+        updatedList = [...deviceList, updatedDevice];
+      }
+
+      // Reconstruct cache data with updated device array
+      return Array.isArray(oldData)
+        ? updatedList
+        : { ...oldData, devices: updatedList };
+    });
+
+    // Keep statistics cards fresh
+    queryClient.invalidateQueries({ queryKey: ["deviceStats"] });
+  };
+
+  socket.on("device-update", handleUpdate); 
+
+  return () => {
+    socket.off("device-update", handleUpdate);
+    socket.off("device-location-updated", handleUpdate);
+  };
+}, [socket, queryClient]);
 
   if (isLoading) {
     return (

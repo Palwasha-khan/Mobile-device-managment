@@ -8,9 +8,7 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const { login, error, loading } = useAuth();
 
-  const handleLogin = async () => {
-    // No manual navigation needed on success - AppNavigator (Phase 2, next
-    // file) watches `device` state and swaps screens automatically
+  const handleLogin = async () => { 
     await login(email, password);
   };
 
@@ -18,7 +16,7 @@ export default function LoginScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={styles.container}>
         <Text style={styles.title}>Employee Login</Text>
-
+<Text style={styles.label}>Email Address</Text>
       <TextInput
         style={styles.input}
         placeholder="employee@company.com"
@@ -27,6 +25,7 @@ export default function LoginScreen({ navigation }) {
         value={email}
         onChangeText={setEmail}
       />
+      <Text style={styles.label}>Password</Text>
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -51,8 +50,14 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#f4f6f8" },
+  label: { 
+    fontSize: 14, 
+    fontWeight: "600", 
+    color: "#334155", 
+    marginBottom: 6 
+  },
   title: { fontSize: 22, fontWeight: "bold", marginBottom: 24, textAlign: "center" },
-  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12, marginBottom: 16 },
+  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12,color: "#0f172a", marginBottom: 16 },
   button: { backgroundColor: "#2563eb", padding: 14, borderRadius: 8, alignItems: "center", marginBottom: 16 },
   buttonText: { color: "#fff", fontWeight: "bold" },
   error: { color: "red", marginBottom: 12, textAlign: "center" },
