@@ -6,7 +6,7 @@ Built to solve a real gap: most MDM tools are expensive, enterprise-only, and ov
 
 ## 🎥 Demo
 
-*(Add your demo video link or embedded GIF here)*
+(https://lnkd.in/p/d93zUGkF)
 
 ## 🏗️ Architecture
 
@@ -123,4 +123,4 @@ MIT
 ## 👤 Author
 
 Palwasha Khan
-[LinkedIn] ·   · [Email:palwashakhan.2201@mail.com]
+[LinkedIn:https://www.linkedin.com/in/palwasha-khan2201/] · [Email:palwashakhan.2201@mail.com]
